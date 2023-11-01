@@ -6,8 +6,13 @@ authors = ["Nicholas M. Synovic <nicholas.synovic@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.13"
 jupyter = "^1.0.0"
+huggingface-hub = "^0.18.0"
+requests = "^2.31.0"
+progress = "^1.6"
+plotly = "^5.18.0"
+pandas = "^2.1.2"
 
 
 [build-system]
