@@ -3,17 +3,47 @@ from json import load
 from json.decoder import JSONDecodeError
 from os.path import abspath, isfile
 from pathlib import Path
-from pprint import pprint as print
 from typing import Any, List
 
 import click
-from pandas import DataFrame
+from huggingface_hub.repocard import ModelCard
+from huggingface_hub.utils._errors import (EntryNotFoundError,
+                                           RepositoryNotFoundError)
+from pandas import DataFrame, Series
 from progress.bar import Bar
 
 
+def identifyLicense_HF(modelIDs: Series) -> dict[str, str | None]:
+    data: dict[str, str | None] = {}
+
+    modelIDList: List[str] = modelIDs.to_list()
+
+    with Bar(
+        message="Identifying the licenses of Hugging Face models... ",
+        max=len(modelIDList),
+    ) as bar:
+        modelID: str
+        for modelID in modelIDList:
+            try:
+                card: ModelCard = ModelCard.load(repo_id_or_path=modelID)
+                data[modelID] = card.data.get(key="license")
+            except EntryNotFoundError:
+                data[modelID] = None
+            except RepositoryNotFoundError:
+                data[modelID] = None
+            bar.next()
+
+    return data
+
+
 def loadData(path: Path) -> DataFrame:
-    data: List[List[str]] = []
-    columns: List[str] = ["Hugging Face Model ID", "GitHub Project URL"]
+    data: List[List[str | None]] = []
+    columns: List[str] = [
+        "Hugging Face Model ID",
+        "GitHub Project URL",
+        "HF License",
+        "GH License",
+    ]
 
     with open(file=path) as jsonFile:
         try:
@@ -36,7 +66,7 @@ def loadData(path: Path) -> DataFrame:
 
             ghProject: str
             for ghProject in ghProjects:
-                data.append([modelID, ghProject])
+                data.append([modelID, ghProject, None, None])
 
             bar.next()
 
@@ -62,22 +92,15 @@ def main(data_filepath: str) -> None:
         quit(1)
 
     df: DataFrame = loadData(path=dataPath)
+    hfModels: Series = df["Hugging Face Model ID"]
+
+    hfModelLicenses: dict[str, str] = identifyLicense_HF(modelIDs=hfModels)
+    print(hfModelLicenses)
 
 
 if __name__ == "__main__":
     main()
     quit()
-
-    model_cnt = 0
-    gh_cnt = 0
-    for model in data:
-        model_cnt += 1
-        for gh in data[model]["usage_repository"]:
-            gh_cnt += 1
-
-    # In[4]:
-
-    model_cnt, gh_cnt
 
     # In[5]:
 
