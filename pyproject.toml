@@ -13,6 +13,7 @@ requests = "^2.31.0"
 progress = "^1.6"
 plotly = "^5.18.0"
 pandas = "^2.1.2"
+click = "^8.1.7"
 
 
 [build-system]
