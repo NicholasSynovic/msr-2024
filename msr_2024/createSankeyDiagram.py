@@ -6,7 +6,7 @@ from pandas import DataFrame
 from plotly import graph_objects as go
 
 
-def createFigure(data: dict[str, List[Any]]) -> None:
+def createFigure(data: dict[str, List[Any]], output: str) -> None:
     fig = go.Figure(
         data=[
             go.Sankey(
@@ -22,7 +22,7 @@ def createFigure(data: dict[str, List[Any]]) -> None:
     )
 
     fig.update_layout(title_text="HF License to GH License Mapping", font_size=10)
-    fig.show()
+    fig.write_image(output)
 
 
 def preprocessData(df: DataFrame) -> dict[str, List[Any]]:
@@ -66,12 +66,19 @@ def preprocessData(df: DataFrame) -> dict[str, List[Any]]:
     type=str,
     help="Path to JSON data file to plot",
 )
-def main(data_filepath: str) -> None:
+@click.option(
+    "-o",
+    "--output",
+    default="sankey.pdf",
+    type=str,
+    help="Path to save figure to",
+)
+def main(data_filepath: str, output) -> None:
     df: DataFrame = pandas.read_json(path_or_buf=data_filepath).T
 
     data: dict[str, List[Any]] = preprocessData(df=df)
 
-    createFigure(data=data)
+    createFigure(data=data, output=output)
 
 
 if __name__ == "__main__":
