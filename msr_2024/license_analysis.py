@@ -11,6 +11,67 @@ from huggingface_hub.utils._errors import (EntryNotFoundError,
                                            RepositoryNotFoundError)
 from pandas import DataFrame, Series
 from progress.bar import Bar
+from requests import Response, get
+
+
+def updateGHProjectLicense(df: DataFrame, data: dict[str, str | None]) -> None:
+    keys: List[str] = list(data.keys())
+
+    with Bar(message="Storing GitHub model licenses... ", max=len(keys)) as bar:
+        key: str
+        for key in keys:
+            df["GH License"].where(
+                df["GitHub Project URL"] != key, data[key], inplace=True
+            )
+            bar.next()
+
+
+def updateHFModelLicense(df: DataFrame, data: dict[str, str | None]) -> None:
+    keys: List[str] = list(data.keys())
+
+    with Bar(message="Storing Hugging Face model licenses... ", max=len(keys)) as bar:
+        key: str
+        for key in keys:
+            df["HF License"].where(
+                df["Hugging Face Model ID"] != key, data[key], inplace=True
+            )
+            bar.next()
+
+
+def identifyLicense_GH(projectURLs: Series, token: str) -> dict[str, str | None]:
+    data: dict[str, str | None] = {}
+
+    header: dict[str, str] = {"Authorization": f"Bearer {token}"}
+
+    projectURLsList: List[str] = projectURLs.to_list()
+
+    with Bar(
+        message="Identifying the licenses of GitHub projects... ",
+        max=len(projectURLsList),
+    ) as bar:
+        projectURL: str
+        for projectURL in projectURLs:
+            projectLicense: str | None = None
+            splitURL: List[str] = projectURL.split("/")
+            author: str = splitURL[-2]
+            repo: str = splitURL[-1]
+
+            apiURL: str = f"https://api.github.com/repos/{author}/{repo}"
+
+            resp: Response = get(url=apiURL, headers=header)
+            jsonResp: dict[str, Any] = resp.json()
+
+            try:
+                projectLicense = jsonResp["license"]["key"]
+            except KeyError:
+                projectLicense = None
+            except TypeError:
+                projectLicense = None
+
+            data[projectURL] = projectLicense
+            bar.next()
+
+    return data
 
 
 def identifyLicense_HF(modelIDs: Series) -> dict[str, str | None]:
@@ -81,7 +142,21 @@ def loadData(path: Path) -> DataFrame:
     type=str,
     help="Path to data file to analyze",
 )
-def main(data_filepath: str) -> None:
+@click.option(
+    "-t",
+    "--gh-token",
+    required=True,
+    type=str,
+    help="GitHub personal access token",
+)
+@click.option(
+    "-o",
+    "--json-output",
+    required=True,
+    type=str,
+    help="Path to save JSON data",
+)
+def main(data_filepath: str, gh_token: str, json_output: str) -> None:
     dataPath: Path = Path(data_filepath)
     dataPath = Path(abspath(path=dataPath))
 
@@ -93,65 +168,24 @@ def main(data_filepath: str) -> None:
 
     df: DataFrame = loadData(path=dataPath)
     hfModels: Series = df["Hugging Face Model ID"]
+    ghProjects: Series = df["GitHub Project URL"]
 
-    hfModelLicenses: dict[str, str] = identifyLicense_HF(modelIDs=hfModels)
-    print(hfModelLicenses)
+    hfModelLicenses: dict[str, str | None] = identifyLicense_HF(modelIDs=hfModels)
+    ghProjectLicenses: dict[str, str | None] = identifyLicense_GH(
+        projectURLs=ghProjects,
+        token=gh_token,
+    )
+
+    updateHFModelLicense(df=df, data=hfModelLicenses)
+    updateGHProjectLicense(df=df, data=ghProjectLicenses)
+
+    df.T.to_json(path_or_buf=json_output, indent=4)
 
 
 if __name__ == "__main__":
     main()
+
     quit()
-
-    # In[5]:
-
-    card = ModelCard.load("microsoft/resnet-50")
-    print(card.data.license)
-
-    # In[6]:
-
-    g = Github()
-    repo = g.get_repo("huggingface/transformers")
-    license = repo.get_license()
-    print(license.license.name)
-
-    # In[11]:
-
-    model_cnt = 0
-    gh_cnt = 0
-    no_license_hf_cnt = 0
-    no_license_gh_cnt = 0
-    hf_license = []
-    gh_license = []
-
-    for model in data:
-        model_cnt += 1
-        try:
-            card = ModelCard.load(model)
-            hf_license.append(card.data.license)
-        except:
-            print(f"{model} does not have a license")
-            no_license_hf_cnt += 1
-            hf_license.append(None)
-        for gh in data[model]["usage_repository"]:
-            gh_cnt += 1
-            try:
-                try:
-                    repo = g.get_repo(gh)
-                    license = repo.get_license()
-                    gh_license.append(license.license.name)
-                except RateLimitExceededException:
-                    print("RateLimitExceededException")
-                    time.sleep(3600)
-                    repo = g.get_repo(gh)
-                    license = repo.get_license()
-                    gh_license.append(license.license.name)
-            except:
-                print(f"{gh} does not have a license")
-                gh_license.append(None)
-                no_license_gh_cnt += 1
-
-    # In[ ]:
-
     import plotly.graph_objects as go
 
     # Your given code here to populate hf_license and gh_license...
