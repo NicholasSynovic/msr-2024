@@ -10,6 +10,7 @@ def createFigure(data: dict[str, List[Any]], output: str) -> None:
     fig = go.Figure(
         data=[
             go.Sankey(
+                arrangement="snap",
                 node=dict(
                     pad=15,
                     thickness=20,
@@ -25,8 +26,12 @@ def createFigure(data: dict[str, List[Any]], output: str) -> None:
     fig.write_image(output)
 
 
-def preprocessData(df: DataFrame) -> dict[str, List[Any]]:
-    df.dropna(inplace=True, ignore_index=True)
+def preprocessData(df: DataFrame, dropNone: bool) -> dict[str, List[Any]]:
+    if dropNone:
+        df.dropna(inplace=True, ignore_index=True)
+    else:
+        df.fillna(value="No License", inplace=True)
+
     hfLicenses: List[str] = df["HF License"].to_list()
     ghLicenses: List[str] = df["GH License"].to_list()
 
@@ -73,10 +78,18 @@ def preprocessData(df: DataFrame) -> dict[str, List[Any]]:
     type=str,
     help="Path to save figure to",
 )
-def main(data_filepath: str, output) -> None:
+@click.option(
+    "--drop-none",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    type=bool,
+    help="Drop projects that do not have a license",
+)
+def main(data_filepath: str, output: str, drop_none: bool) -> None:
     df: DataFrame = pandas.read_json(path_or_buf=data_filepath).T
 
-    data: dict[str, List[Any]] = preprocessData(df=df)
+    data: dict[str, List[Any]] = preprocessData(df=df, dropNone=drop_none)
 
     createFigure(data=data, output=output)
 
