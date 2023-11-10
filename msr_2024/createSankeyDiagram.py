@@ -1,9 +1,11 @@
 from typing import Any, List
 
 import click
+import matplotlib.pyplot as plt
 import pandas
 from pandas import DataFrame
 from plotly import graph_objects as go
+from sankey import sankey
 
 
 def createFigure(data: dict[str, List[Any]], output: str) -> None:
@@ -12,6 +14,8 @@ def createFigure(data: dict[str, List[Any]], output: str) -> None:
             go.Sankey(
                 arrangement="snap",
                 node=dict(
+                    # x = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                    # y = [2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                     pad=15,
                     thickness=20,
                     line=dict(color="black", width=0.5),
@@ -30,13 +34,17 @@ def preprocessData(df: DataFrame, dropNone: bool) -> dict[str, List[Any]]:
     if dropNone:
         df.dropna(inplace=True, ignore_index=True)
     else:
-        df.fillna(value="No License", inplace=True)
+        df.fillna(value="no license", inplace=True)
 
-    hfLicenses: List[str] = df["HF License"].to_list()
-    ghLicenses: List[str] = df["GH License"].to_list()
+    tempDF: DataFrame = (
+        df[["HF License", "GH License"]].value_counts().reset_index(name="Count")
+    )
 
-    uniqueHFLicenses: List[str] = list(set(hfLicenses))
-    uniqueGHLicenses: List[str] = list(set(ghLicenses))
+    hfLicenses: List[str] = tempDF["HF License"].to_list()
+    ghLicenses: List[str] = tempDF["GH License"].to_list()
+
+    uniqueHFLicenses: List[str] = tempDF["HF License"].drop_duplicates().to_list()
+    uniqueGHLicenses: List[str] = tempDF["GH License"].drop_duplicates().to_list()
 
     hfLicenseIndices: List[int] = [
         uniqueHFLicenses.index(hfLicense) for hfLicense in hfLicenses
@@ -49,9 +57,10 @@ def preprocessData(df: DataFrame, dropNone: bool) -> dict[str, List[Any]]:
     ]  # TODO: What does this do?
 
     labels: List[str] = uniqueHFLicenses + uniqueGHLicenses
+
     source: List[int] = hfLicenseIndices
     target: List[int] = ghLicenseIndices
-    value: List[int] = [1] * len(source)
+    value: List[int] = tempDF["Count"].to_list()
 
     data: dict[str, List[Any]] = {
         "label": labels,
@@ -61,6 +70,23 @@ def preprocessData(df: DataFrame, dropNone: bool) -> dict[str, List[Any]]:
     }
 
     return data
+
+
+def plotPySankey(df: DataFrame) -> None:
+    df.fillna(value="no license", inplace=True)
+    foo: DataFrame = (
+        df[["HF License", "GH License"]].value_counts().reset_index(name="Count")
+    )
+
+    sankey(
+        left=foo["HF License"],
+        right=foo["GH License"],
+        leftWeight=foo["Count"],
+        fontsize=6,
+    )
+    plt.gcf().set_size_inches(10, 5)
+    plt.tight_layout()
+    plt.savefig("test.pdf")
 
 
 @click.command()
@@ -91,7 +117,8 @@ def main(data_filepath: str, output: str, drop_none: bool) -> None:
 
     data: dict[str, List[Any]] = preprocessData(df=df, dropNone=drop_none)
 
-    createFigure(data=data, output=output)
+    # createFigure(data=data, output=output)
+    plotPySankey(df=df)
 
 
 if __name__ == "__main__":
