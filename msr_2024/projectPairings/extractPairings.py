@@ -8,7 +8,8 @@ from pandas import DataFrame
 def postProcess(df: DataFrame) -> DataFrame:
     df.drop(
         labels=[
-            "license_id",
+            "owner",
+            "name",
             "model_hub_id",
             "sha",
             "downloads",
@@ -20,25 +21,31 @@ def postProcess(df: DataFrame) -> DataFrame:
         axis=1,
         inplace=True,
     )
+
+    df.rename(
+        columns={
+            "url": "Project URL",
+            "context_id": "Model Name",
+            "repo_url": "Model URL",
+        },
+        inplace=True,
+    )
+
     return df.T
 
 
 def mergeTables(
-    models: DataFrame, licenses: DataFrame, modelLicensePairs: DataFrame
+    models: DataFrame, projects: DataFrame, modelProjectPairs: DataFrame
 ) -> DataFrame:
-    licenses["name"].replace(to_replace="", value="None", inplace=True)
-    licenses.rename(
-        columns={"id": "license_id", "name": "license_name"},
-        inplace=True,
-    )
-
+    projects.rename(columns={"id": "reuse_repository_id"}, inplace=True)
     models.rename(columns={"id": "model_id"}, inplace=True)
 
-    foo: DataFrame = licenses.merge(
-        right=modelLicensePairs,
+    foo: DataFrame = projects.merge(
+        right=modelProjectPairs,
         how="left",
-        on="license_id",
+        on="reuse_repository_id",
     )
+
     bar: DataFrame = foo.merge(right=models, how="left", on="model_id")
 
     return bar
@@ -54,18 +61,18 @@ def main() -> None:
     con: Connection = sqlite3.connect(database="../../data/PeaTMOSS.db")
 
     models: DataFrame = loadTable(table="model", con=con)
-    licenses: DataFrame = loadTable(table="license", con=con)
-    modelLicensePairs: DataFrame = loadTable(table="model_to_license", con=con)
+    projects: DataFrame = loadTable(table="reuse_repository", con=con)
+    modelProjectPairs: DataFrame = loadTable(table="model_to_reuse_repository", con=con)
 
     con.close()
 
     df: DataFrame = mergeTables(
         models=models,
-        licenses=licenses,
-        modelLicensePairs=modelLicensePairs,
+        projects=projects,
+        modelProjectPairs=modelProjectPairs,
     )
 
-    postProcess(df=df).to_json(path_or_buf="ptmLicenses.json")
+    postProcess(df=df).to_json(path_or_buf="ptmProjectPairs.json")
 
 
 if __name__ == "__main__":
