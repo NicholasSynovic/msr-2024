@@ -82,7 +82,8 @@ def plotPySankey(df: DataFrame) -> None:
         left=foo["HF License"],
         right=foo["GH License"],
         leftWeight=foo["Count"],
-        fontsize=6,
+        fontsize=12,
+        spacer=0.05,
     )
     plt.gcf().set_size_inches(10, 5)
     plt.tight_layout()

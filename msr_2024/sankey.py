@@ -72,6 +72,7 @@ def sankey(
     fontsize=14,
     figureName=None,
     closePlot=False,
+    spacer: float = 0.1,
 ):
     """
     Make Sankey Diagram showing flow from left-->right
@@ -95,6 +96,8 @@ def sankey(
     Ouput:
         None
     """
+    spacer: float = spacer
+
     if leftWeight is None:
         leftWeight = []
     if rightWeight is None:
@@ -283,7 +286,8 @@ def sankey(
             myD["top"] = myD["left"]
         else:
             myD["bottom"] = (
-                leftWidths[leftLabels[i - 1]]["top"] + 0.02 * dataFrame.leftWeight.sum()
+                leftWidths[leftLabels[i - 1]]["top"]
+                + spacer * dataFrame.leftWeight.sum()
             )
             myD["top"] = myD["bottom"] + myD["left"]
             topEdge = myD["top"]
@@ -300,7 +304,7 @@ def sankey(
         else:
             myD["bottom"] = (
                 rightWidths[rightLabels[i - 1]]["top"]
-                + 0.02 * dataFrame.rightWeight.sum()
+                + spacer * dataFrame.rightWeight.sum()
             )
             myD["top"] = myD["bottom"] + myD["right"]
             topEdge = myD["top"]
