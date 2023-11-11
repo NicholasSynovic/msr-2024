@@ -5,6 +5,25 @@ import pandas
 from pandas import DataFrame
 
 
+def postProcess(df: DataFrame) -> DataFrame:
+    df.drop(
+        labels=[
+            "license_id",
+            "model_id",
+            "model_hub_id",
+            "sha",
+            "downloads",
+            "likes",
+            "has_snapshot",
+            "ptm_issues_id",
+            "ptm_pull_requests_id",
+        ],
+        axis=1,
+        inplace=True,
+    )
+    return df.T
+
+
 def mergeTables(
     models: DataFrame, licenses: DataFrame, modelLicensePairs: DataFrame
 ) -> DataFrame:
@@ -46,6 +65,8 @@ def main() -> None:
         licenses=licenses,
         modelLicensePairs=modelLicensePairs,
     )
+
+    postProcess(df=df).to_json(path_or_buf="ptmLicenses.json")
 
 
 if __name__ == "__main__":
