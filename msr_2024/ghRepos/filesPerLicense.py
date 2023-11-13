@@ -1,11 +1,13 @@
 from json import load
+from pathlib import Path
 from typing import Any
 
 import pandas
 from pandas import DataFrame
+from progress.bar import Bar
 
 
-def main() -> None:
+def loadJSONFile(filepath: Path) -> DataFrame:
     with open(
         file="../../data/ghLicenses/facebookresearch_DisCo.json", mode="r"
     ) as jsonFile:
@@ -14,6 +16,7 @@ def main() -> None:
 
     relevantJSON: dict[str, Any] = json["files"]
     df: DataFrame = DataFrame.from_records(data=relevantJSON)
+
     df.drop(
         columns=df.columns.difference(
             other=[
@@ -26,11 +29,15 @@ def main() -> None:
         inplace=True,
     )
 
-    df2: DataFrame = df[df["path"].str.contains(".py|.sh") == False].reset_index(
+    df: DataFrame = df[df["path"].str.contains(".py|.sh") == False,].reset_index(
         drop=True
     )
 
-    print(df)
+    return df
+
+
+def main() -> None:
+    pass
 
 
 if __name__ == "__main__":
