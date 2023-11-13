@@ -1,5 +1,6 @@
 import sqlite3
 from sqlite3 import Connection
+from typing import List
 
 import pandas
 from pandas import DataFrame
@@ -31,7 +32,7 @@ def postProcess(df: DataFrame) -> DataFrame:
         inplace=True,
     )
 
-    return df.T
+    return df
 
 
 def mergeTables(
@@ -58,6 +59,7 @@ def loadTable(table: str, con: Connection) -> DataFrame:
 
 
 def main() -> None:
+    baz: List[str] = []
     con: Connection = sqlite3.connect(database="../../data/PeaTMOSS.db")
 
     models: DataFrame = loadTable(table="model", con=con)
@@ -72,7 +74,22 @@ def main() -> None:
         modelProjectPairs=modelProjectPairs,
     )
 
-    postProcess(df=df).to_json(path_or_buf="ptmProjectPairs.json")
+    foo: DataFrame = postProcess(df=df)
+    foo.T.to_json(path_or_buf="ptmProjectPairs.json")
+
+    bar: List[str] = foo["Project URL"].to_list()
+
+    url: str
+    for url in bar:
+        splitURL: List[str] = url.split(sep="/")
+        author: str = splitURL[-2]
+        repo: str = splitURL[-1]
+        baz.append(f"{author}_{repo}\n")
+
+    baz = sorted(baz)
+    with open(file="mappedGitHubProjects.txt", mode="w") as mgp:
+        mgp.writelines(baz)
+        mgp.close()
 
 
 if __name__ == "__main__":
