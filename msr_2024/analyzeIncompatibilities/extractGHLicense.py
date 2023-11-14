@@ -24,6 +24,7 @@ total_json_files = len(json_files)
 # Initialize the counter string, for displaying progress
 counter_str = ""
 
+# license parsing function
 def parse_licenses(license_string):
     # Split the string on 'AND' or 'OR', and remove leading/trailing whitespaces
     terms = [term.strip() for term in re.split(r'\b(?:AND|OR)\b', license_string)]
