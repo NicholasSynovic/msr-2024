@@ -7,6 +7,8 @@ from pandas import DataFrame
 from pandas.core.groupby import DataFrameGroupBy
 
 FONTSIZE: int = 12
+X_COL: str = "tasks"
+Y_COL: str = "count"
 
 
 def main() -> None:
@@ -18,8 +20,6 @@ def main() -> None:
         path_or_buf="../../data/countMetadataPerPTM.json"
     ).T
 
-    print(df.columns)
-
     dfs: DataFrameGroupBy = df.groupby(by="task")
 
     foo: tuple[Hashable, DataFrame]
@@ -30,40 +30,64 @@ def main() -> None:
         modelTasks.append(str(foo[0]))
         counts.append(int(count))
 
-    data["tasks"] = modelTasks
-    data["count"] = counts
+    data[X_COL] = modelTasks
+    data[Y_COL] = counts
 
     df: DataFrame = DataFrame(data=data)
-    print(df)
-    quit()
+    df = df[df[X_COL] != "pretraining"]
+    df = df[df[X_COL] != "pre-training"]
+    df.replace(
+        to_replace="text2text-generation", value="text-to-text-generation", inplace=True
+    )
+    df.replace(to_replace="", value="none", inplace=True)
+    df.sort_values(by="count", axis=0, ignore_index=True, inplace=True)
+    t2tgCount: int = df["count"].loc[12] + df["count"].loc[44]
+    df = df[df[X_COL] != "text-to-text-generation"]
+    df = pandas.concat(
+        objs=[
+            df,
+            DataFrame(
+                data={"tasks": ["text-to-text-generation"], "count": [t2tgCount]}
+            ),
+        ],
+        ignore_index=True,
+    )
+    df.sort_values(
+        by="count",
+        axis=0,
+        ignore_index=True,
+        inplace=True,
+        ascending=False,
+    )
 
     plt.figure(figsize=(18, 9))
-    for idx, value in enumerate(df["project_count"]):
+    for idx, value in enumerate(df[Y_COL]):
         plt.bar(
-            df["task_name"][idx],
+            df[X_COL][idx],
             value,
             color=list(XKCD_COLORS.values())[idx],
-            label=f'{df["task_name"][idx]}',
+            label=f"{df[X_COL][idx]}",
         )
         plt.text(
-            df["task_name"][idx],
+            df[X_COL][idx],
             value,
             str(value),
             ha="center",
             va="bottom",
             fontsize=FONTSIZE - 4,
+            rotation=30,
         )
 
-    plt.bar(df["task_name"], df["project_count"], color=XKCD_COLORS.values())
+    plt.bar(df[X_COL], df[Y_COL], color=XKCD_COLORS.values())
     plt.xlabel("PTM Task", fontsize=FONTSIZE)
-    plt.ylabel("Application Count", fontsize=FONTSIZE)
+    plt.ylabel("Metadata Count", fontsize=FONTSIZE)
     plt.xticks([])
     plt.yscale("log")
     # plt.legend(loc="upper left", ncol=len(df["task_name"])//5, fontsize=FONTSIZE, bbox_to_anchor=(1,1))
     plt.legend(loc="upper left", ncol=2, fontsize=FONTSIZE, bbox_to_anchor=(1, 1))
-    plt.title("Frequency of Applications per PTM Task")
+    plt.title("Captured Metadata per PTM Task")
     plt.tight_layout()
-    plt.savefig("frequencyOfApplicationsPerPTMTask.pdf")
+    plt.savefig("amountOfMetadataCapturedPerPTMTask.pdf")
 
 
 if __name__ == "__main__":
