@@ -1,4 +1,3 @@
-TODO
 1. Document how to add licenses into Nate's conflict analysis code (plus the link to the Linux Foundation table he found)
     need to add linux foundation table I've found and am looking to use still https://events19.linuxfoundation.org/wp-content/uploads/2018/07/OSLS-2019-Fulfilling-Open-Source-license-obligations-Can-checklists-help.pdf (slide 32)
     currently licenses are hardcoded in createFrequencies.py, incorporating the linux foundation OSS license compatibility table will remove these hardcoded incompatibilities, then the table needs to be expanded upon to include the additional relationships present in the dataset ("no license" -> {OSS license}; {CC license} -> {OSS license}, etc.)
@@ -6,7 +5,13 @@ TODO
     DONE
 
 3. Understand what files licensee looks at
+    ["license", "license.txt", "license.md", "license.rst", "readme", "readme.txt", "readme.md", "readme.rst"]
 4. Write a program to find those paths in the scancode output and produce (from scancode output on a single repo) a file of the form { 'repo': 'X/Y', 'license': 'XXX', 'licenseFilename': 'XXX' } or similar. Test this on the two examples Nick provided.
+    {"repo":"license"}
+    all_gh_licenses.json
 5. Run that program across Nick's dataset
+    done
+
+TODO - need to update createFrequencies.py with new table and relations
 6. Update the license conflict analysis code and ingest the full dataset (using the HF <-> GH mappings with the extra license data)
     a. Start with a sample of 5K, then expand to the full set of HF <-> GH mappings
