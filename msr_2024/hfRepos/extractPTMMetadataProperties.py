@@ -90,12 +90,32 @@ def _countDict(test: dict[str, Any]) -> int:
 
 
 def constructDF(data: dict[str, Any], modelID: int) -> DataFrame | None:
+    taskList: List[str] = []
+
     try:
-        foo: dict[str, List[int]] = {"task": data["model_task"]}
+        rawTask: Any = data["model_task"]
     except TypeError:
         return None
 
-    taskCount: int = len(data["model_task"])
+    rawTaskList: List[str] = []
+    if isinstance(rawTask, str):
+        rawTaskList = [rawTask]
+    else:
+        rawTaskList = rawTask
+
+    taskList: List[str] = []
+    task: str
+    for task in rawTaskList:
+        if task.find(",") != -1:
+            taskList.extend(
+                [subtask.strip().replace(" ", "") for subtask in task.split(",")]
+            )
+        else:
+            taskList.append(task)
+
+    foo: dict[str, List[str | int]] = {"task": taskList}
+
+    taskCount: int = len(foo["task"])
     foo["modelID"] = [modelID] * taskCount
 
     column: str
