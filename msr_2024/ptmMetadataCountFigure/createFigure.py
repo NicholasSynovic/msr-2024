@@ -60,6 +60,9 @@ def main() -> None:
         ascending=False,
     )
 
+    #    print(df[X_COL].to_list())
+    #    quit()
+
     plt.figure(figsize=(18, 9))
     for idx, value in enumerate(df[Y_COL]):
         plt.bar(

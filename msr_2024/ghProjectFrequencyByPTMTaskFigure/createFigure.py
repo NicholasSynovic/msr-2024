@@ -13,44 +13,6 @@ def main() -> None:
 
     print(df["task_name"].to_list())
 
-'''
-
-    {"Multimodal":[}
-
-    [
-        "fill-mask",
-        "text2text-generation",
-        "token-classification",
-        "feature-extraction",
-        "text-generation",
-        "image-classification",
-        "summarization",
-        "automatic-speech-recognition",
-        "sentence-similarity",
-        "translation",
-        "text-classification",
-        "audio-classification",
-        "question-answering",
-        "conversational",
-        "table-question-answering",
-        "zero-shot-image-classification",
-        "image-to-text",
-        "text-to-image",
-        "image-segmentation",
-        "object-detection",
-        "visual-question-answering",
-        "image-to-image",
-        "document-question-answering",
-        "zero-shot-classification",
-        "unconditional-image-generation",
-        "reinforcement-learning",
-        "text-to-speech",
-        "audio-to-audio",
-        "text-to-video",
-        "video-classification",
-    ]
-'''
-
     plt.figure(figsize=(18, 9))
     for idx, value in enumerate(df["project_count"]):
         plt.bar(
