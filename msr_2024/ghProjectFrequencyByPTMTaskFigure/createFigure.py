@@ -11,8 +11,6 @@ def main() -> None:
         path_or_buf="../../data/ghProjectsPerPTMTask.json"
     ).T.sort_values(by="project_count", ascending=False, ignore_index=True)
 
-    print(df["task_name"].to_list())
-
     plt.figure(figsize=(18, 9))
     for idx, value in enumerate(df["project_count"]):
         plt.bar(

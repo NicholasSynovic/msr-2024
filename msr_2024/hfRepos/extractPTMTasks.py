@@ -2,96 +2,62 @@ import sqlite3
 from sqlite3 import Connection
 from typing import List
 
+import numpy
 import pandas
 from pandas import DataFrame
 
-TASK_NAMES: List[str] = list(
-    set(
-        [
-            "text-generation",
-            "text-to-text-generation",
-            "image-classification",
-            "text-classification",
-            "fill-mask",
-            "feature-extraction",
-            "token-classification",
-            "conversational",
-            "text-to-image",
-            "translation",
-            "summarization",
-            "automatic-speech-recognition",
-            "sentence-similarity",
-            "question-answering",
-            "image-segmentation",
-            "image-to-text",
-            "zero-shot-classification",
-            "image-to-image",
-            "audio-classification",
-            "text-to-speech",
-            "audio-to-audio",
-            "object-detection",
-            "visual-question-answering",
-            "table-question-answering",
-            "zero-shot-image-classification",
-            "unconditional-image-generation",
-            "document-question-answering",
-            "video-classification",
-            "reinforcement-learning",
-            "image-super-resolution",
-            "text-to-video",
-            "voice-activity-detection",
-            "image-text-matching",
-            "audio-captioning",
-            "text-to-audio",
-            "image-text-retrieval",
-            "speaker-diarization",
-            "dense-passage-retrieval",
-            "graph-machine-learning",
-            "information-extraction",
-            "sentence-embeddings",
-            "time-series-forecasting",
-            "depth-estimation",
-            "audio-generation",
-            "none",
-            "feature-extraction",
-            "text-to-image",
-            "image-to-text",
-            "text-to-video",
-            "visual-question-answering",
-            "document-question-answering",
-            "graph neural networks" "depth-estimation",
-            "image-classification",
-            "object-detection",
-            "image-segmentation",
-            "image-to-image",
-            "unconditional-image-generation",
-            "video-classification",
-            "zero-shot-image-classification",
-            "text-classification",
-            "token-classification",
-            "table-question-answering",
-            "question-answering",
-            "zero-shot-classification",
-            "translation",
-            "summarization",
-            "conversational",
-            "text-generation",
-            "text2text-generation",
-            "fill-mask",
-            "sentence-similarity",
-            "text-to-speech",
-            "text-to-audio",
-            "automatic-speech-recognition",
-            "audio-to-audio",
-            "audio-classification",
-            "voice-activity-detection",
-            "tabular-classification",
-            "tabular-regression",
-            "reinforcement-learning",
-            "robotics",
-        ]
-    )
-)
+TASK_NAMES: List[str] = [
+    "summarization",
+    "time-series-forecasting",
+    "tabular-classification",
+    "voice-activity-detection",
+    "none",
+    "text-generation",
+    "text-to-image",
+    "image-segmentation",
+    "image-text-retrieval",
+    "document-question-answering",
+    "zero-shot-image-classification",
+    "audio-captioning",
+    "table-question-answering",
+    "automatic-speech-recognition",
+    "sentence-embeddings",
+    "text-to-text-generation",
+    "sentence-similarity",
+    "reinforcement-learning",
+    "depth-estimation",
+    "conversational",
+    "video-classification",
+    "text-to-speech",
+    "audio-to-audio",
+    "graph neural networksdepth-estimation",
+    "text2text-generation",
+    "image-classification",
+    "audio-classification",
+    "image-super-resolution",
+    "translation",
+    "object-detection",
+    "unconditional-image-generation",
+    "feature-extraction",
+    "text-to-audio",
+    "audio-generation",
+    "tabular-regression",
+    "visual-question-answering",
+    "robotics",
+    "graph-machine-learning",
+    "token-classification",
+    "image-text-matching",
+    "information-extraction",
+    "dense-passage-retrieval",
+    "speaker-diarization",
+    "text-classification",
+    "image-to-text",
+    "question-answering",
+    "image-to-image",
+    "text-to-video",
+    "fill-mask",
+    "zero-shot-classification",
+]
 
 
 def loadTable(table: str, con: Connection) -> DataFrame:
@@ -108,6 +74,312 @@ def mergeTables(tags: DataFrame, modelTags: DataFrame, models: DataFrame) -> Dat
     foo.drop(labels="tag_id", axis=1, inplace=True)
 
     bar: DataFrame = foo.merge(right=models, how="left", on="model_id")
+
+    bar["domain"] = numpy.where(
+        bar["name"] == "summarization",
+        "Natural Language Processing",
+        numpy.where(
+            bar["name"] == "time-series-forecasting",
+            "Other",
+            numpy.where(
+                bar["name"] == "tabular-classification",
+                "Tabular",
+                numpy.where(
+                    bar["name"] == "voice-activity-detection",
+                    "Audio",
+                    numpy.where(
+                        bar["name"] == "none",
+                        "Other",
+                        numpy.where(
+                            bar["name"] == "text-generation",
+                            "Natural Language Processing",
+                            numpy.where(
+                                bar["name"] == "text-to-image",
+                                "Multimodal",
+                                numpy.where(
+                                    bar["name"] == "image-segmentation",
+                                    "Computer Vision",
+                                    numpy.where(
+                                        bar["name"] == "image-text-retrieval",
+                                        "Other",
+                                        numpy.where(
+                                            bar["name"]
+                                            == "document-question-answering",
+                                            "Multimodal",
+                                            numpy.where(
+                                                bar["name"]
+                                                == "zero-shot-image-classification",
+                                                "Computer Vision",
+                                                numpy.where(
+                                                    bar["name"] == "audio-captioning",
+                                                    "Other",
+                                                    numpy.where(
+                                                        bar["name"]
+                                                        == "table-question-answering",
+                                                        "Other",
+                                                        numpy.where(
+                                                            bar["name"]
+                                                            == "automatic-speech-recognition",
+                                                            "Audio",
+                                                            numpy.where(
+                                                                bar["name"]
+                                                                == "sentence-embeddings",
+                                                                "Other",
+                                                                numpy.where(
+                                                                    bar["name"]
+                                                                    == "text-to-text-generation",
+                                                                    "Natural Language Processing",
+                                                                    numpy.where(
+                                                                        bar["name"]
+                                                                        == "sentence-similarity",
+                                                                        "Natural Language Processing",
+                                                                        numpy.where(
+                                                                            bar["name"]
+                                                                            == "reinforcement-learning",
+                                                                            "Reinforcement Learning",
+                                                                            numpy.where(
+                                                                                bar[
+                                                                                    "name"
+                                                                                ]
+                                                                                == "depth-estimation",
+                                                                                "Computer Vision",
+                                                                                numpy.where(
+                                                                                    bar[
+                                                                                        "name"
+                                                                                    ]
+                                                                                    == "conversational",
+                                                                                    "Natural Language PRocessing",
+                                                                                    numpy.where(
+                                                                                        bar[
+                                                                                            "name"
+                                                                                        ]
+                                                                                        == "video-classification",
+                                                                                        "Computer Vision",
+                                                                                        numpy.where(
+                                                                                            bar[
+                                                                                                "name"
+                                                                                            ]
+                                                                                            == "text-to-speech",
+                                                                                            "Audio",
+                                                                                            numpy.where(
+                                                                                                bar[
+                                                                                                    "name"
+                                                                                                ]
+                                                                                                == "audio-to-audio",
+                                                                                                "Audio",
+                                                                                                numpy.where(
+                                                                                                    bar[
+                                                                                                        "name"
+                                                                                                    ]
+                                                                                                    == "graph neural networksdepth-estimation",
+                                                                                                    "Multimodal",
+                                                                                                    numpy.where(
+                                                                                                        bar[
+                                                                                                            "name"
+                                                                                                        ]
+                                                                                                        == "text2text-generation",
+                                                                                                        "Natural Language Processing",
+                                                                                                        numpy.where(
+                                                                                                            bar[
+                                                                                                                "name"
+                                                                                                            ]
+                                                                                                            == "image-classification",
+                                                                                                            "Computer Vision",
+                                                                                                            numpy.where(
+                                                                                                                bar[
+                                                                                                                    "name"
+                                                                                                                ]
+                                                                                                                == "audio-classification",
+                                                                                                                "Audio",
+                                                                                                                numpy.where(
+                                                                                                                    bar[
+                                                                                                                        "name"
+                                                                                                                    ]
+                                                                                                                    == "image-super-resolution",
+                                                                                                                    "Other",
+                                                                                                                    numpy.where(
+                                                                                                                        bar[
+                                                                                                                            "name"
+                                                                                                                        ]
+                                                                                                                        == "translation",
+                                                                                                                        "Natural Language Processing",
+                                                                                                                        numpy.where(
+                                                                                                                            bar[
+                                                                                                                                "name"
+                                                                                                                            ]
+                                                                                                                            == "object-detection",
+                                                                                                                            "Computer Vision",
+                                                                                                                            numpy.where(
+                                                                                                                                bar[
+                                                                                                                                    "name"
+                                                                                                                                ]
+                                                                                                                                == "unconditional-image-generation",
+                                                                                                                                "Computer Vision",
+                                                                                                                                numpy.where(
+                                                                                                                                    bar[
+                                                                                                                                        "name"
+                                                                                                                                    ]
+                                                                                                                                    == "feature-extraction",
+                                                                                                                                    "Multimodal",
+                                                                                                                                    numpy.where(
+                                                                                                                                        bar[
+                                                                                                                                            "name"
+                                                                                                                                        ]
+                                                                                                                                        == "text-to-audio",
+                                                                                                                                        "Audio",
+                                                                                                                                        numpy.where(
+                                                                                                                                            bar[
+                                                                                                                                                "name"
+                                                                                                                                            ]
+                                                                                                                                            == "audio-generation",
+                                                                                                                                            "Other",
+                                                                                                                                            numpy.where(
+                                                                                                                                                bar[
+                                                                                                                                                    "name"
+                                                                                                                                                ]
+                                                                                                                                                == "tabular-regression",
+                                                                                                                                                "Tabular",
+                                                                                                                                                numpy.where(
+                                                                                                                                                    bar[
+                                                                                                                                                        "name"
+                                                                                                                                                    ]
+                                                                                                                                                    == "visual-question-answering",
+                                                                                                                                                    "Multimodal",
+                                                                                                                                                    numpy.where(
+                                                                                                                                                        bar[
+                                                                                                                                                            "name"
+                                                                                                                                                        ]
+                                                                                                                                                        == "robotics",
+                                                                                                                                                        "Reinforcement Learning",
+                                                                                                                                                        numpy.where(
+                                                                                                                                                            bar[
+                                                                                                                                                                "name"
+                                                                                                                                                            ]
+                                                                                                                                                            == "graph-machine-learning",
+                                                                                                                                                            "Multimodal",
+                                                                                                                                                            numpy.where(
+                                                                                                                                                                bar[
+                                                                                                                                                                    "name"
+                                                                                                                                                                ]
+                                                                                                                                                                == "token-classification",
+                                                                                                                                                                "Natural Language Processing",
+                                                                                                                                                                numpy.where(
+                                                                                                                                                                    bar[
+                                                                                                                                                                        "name"
+                                                                                                                                                                    ]
+                                                                                                                                                                    == "image-text-matching",
+                                                                                                                                                                    "Other",
+                                                                                                                                                                    numpy.where(
+                                                                                                                                                                        bar[
+                                                                                                                                                                            "name"
+                                                                                                                                                                        ]
+                                                                                                                                                                        == "information-extraction",
+                                                                                                                                                                        "Other",
+                                                                                                                                                                        numpy.where(
+                                                                                                                                                                            bar[
+                                                                                                                                                                                "name"
+                                                                                                                                                                            ]
+                                                                                                                                                                            == "dense-passage-retrieval",
+                                                                                                                                                                            "Other",
+                                                                                                                                                                            numpy.where(
+                                                                                                                                                                                bar[
+                                                                                                                                                                                    "name"
+                                                                                                                                                                                ]
+                                                                                                                                                                                == "speaker-diarization",
+                                                                                                                                                                                "Other",
+                                                                                                                                                                                numpy.where(
+                                                                                                                                                                                    bar[
+                                                                                                                                                                                        "name"
+                                                                                                                                                                                    ]
+                                                                                                                                                                                    == "text-classification",
+                                                                                                                                                                                    "Natural Language Processing",
+                                                                                                                                                                                    numpy.where(
+                                                                                                                                                                                        bar[
+                                                                                                                                                                                            "name"
+                                                                                                                                                                                        ]
+                                                                                                                                                                                        == "image-to-text",
+                                                                                                                                                                                        "Multimodal",
+                                                                                                                                                                                        numpy.where(
+                                                                                                                                                                                            bar[
+                                                                                                                                                                                                "name"
+                                                                                                                                                                                            ]
+                                                                                                                                                                                            == "question-answering",
+                                                                                                                                                                                            "Natural Language Processing",
+                                                                                                                                                                                            numpy.where(
+                                                                                                                                                                                                bar[
+                                                                                                                                                                                                    "name"
+                                                                                                                                                                                                ]
+                                                                                                                                                                                                == "image-to-image",
+                                                                                                                                                                                                "Computer Vision",
+                                                                                                                                                                                                numpy.where(
+                                                                                                                                                                                                    bar[
+                                                                                                                                                                                                        "name"
+                                                                                                                                                                                                    ]
+                                                                                                                                                                                                    == "text-to-video",
+                                                                                                                                                                                                    "Other",
+                                                                                                                                                                                                    numpy.where(
+                                                                                                                                                                                                        bar[
+                                                                                                                                                                                                            "name"
+                                                                                                                                                                                                        ]
+                                                                                                                                                                                                        == "fill-mask",
+                                                                                                                                                                                                        "Natural Language Processing",
+                                                                                                                                                                                                        numpy.where(
+                                                                                                                                                                                                            bar[
+                                                                                                                                                                                                                "name"
+                                                                                                                                                                                                            ]
+                                                                                                                                                                                                            == "zero-shot-classification",
+                                                                                                                                                                                                            "Other",
+                                                                                                                                                                                                            "None",
+                                                                                                                                                                                                        ),
+                                                                                                                                                                                                    ),
+                                                                                                                                                                                                ),
+                                                                                                                                                                                            ),
+                                                                                                                                                                                        ),
+                                                                                                                                                                                    ),
+                                                                                                                                                                                ),
+                                                                                                                                                                            ),
+                                                                                                                                                                        ),
+                                                                                                                                                                    ),
+                                                                                                                                                                ),
+                                                                                                                                                            ),
+                                                                                                                                                        ),
+                                                                                                                                                    ),
+                                                                                                                                                ),
+                                                                                                                                            ),
+                                                                                                                                        ),
+                                                                                                                                    ),
+                                                                                                                                ),
+                                                                                                                            ),
+                                                                                                                        ),
+                                                                                                                    ),
+                                                                                                                ),
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                ),
+                                                                                            ),
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ),
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    )
 
     bar.rename(columns={"name": "task_name"}, inplace=True)
 
