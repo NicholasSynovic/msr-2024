@@ -1,7 +1,10 @@
 import sqlite3
+from os.path import abspath
+from pathlib import Path
 from sqlite3 import Connection
 from typing import List
 
+import click
 import numpy
 import pandas
 from pandas import DataFrame
@@ -404,8 +407,29 @@ def postProcess(df: DataFrame) -> DataFrame:
     return foo
 
 
-def main() -> None:
-    con: Connection = sqlite3.connect(database="../../data/PeaTMOSS.db")
+@click.command()
+@click.option(
+    "-d",
+    "--db",
+    default="../../data/PeaTMOSS.db",
+    type=Path,
+    help="Path to PeaTMOSS to analyze",
+    show_default=True,
+)
+@click.option(
+    "-o",
+    "--output",
+    default="../../data/tasks/ptmProjectTasks.json",
+    type=Path,
+    help="Path to store application output",
+    show_default=True,
+)
+def main(db: Path, output: Path) -> None:
+    dbFilepath: Path = Path(abspath(db))
+    outputFilepath: Path = Path(abspath(output))
+
+    print(f"Reading data from {dbFilepath}...")
+    con: Connection = sqlite3.connect(database=dbFilepath)
 
     tags: DataFrame = loadTable(table="tag", con=con)
     modelTags: DataFrame = loadTable(table="model_to_tag", con=con)
@@ -415,7 +439,8 @@ def main() -> None:
 
     df: DataFrame = mergeTables(tags=tags, modelTags=modelTags, models=models)
 
-    postProcess(df=df).T.to_json(path_or_buf="projectTasks.json", indent=4)
+    print(f"Writing data to {outputFilepath}...")
+    postProcess(df=df).T.to_json(path_or_buf=output, indent=4)
 
 
 if __name__ == "__main__":
