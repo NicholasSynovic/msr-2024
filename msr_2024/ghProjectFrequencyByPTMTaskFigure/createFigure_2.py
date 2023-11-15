@@ -14,6 +14,11 @@ def main() -> None:
     pivot: DataFrame = df.pivot(
         index="domain", columns="task_name", values="project_count"
     )
+
+    pivot["Total"] = pivot.sum(axis=1)
+    pivot = pivot.sort_values(by="Total", ascending=False)
+    del pivot["Total"]
+
     pivot.plot(kind="bar", figsize=(20, 6))
 
     plt.title("Frequency of Applications per PTM Task")

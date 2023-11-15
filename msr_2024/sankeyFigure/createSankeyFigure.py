@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas
 from pandas import DataFrame
 from plotly import graph_objects as go
-from sankey import sankey
+from sankey_lib import sankey
 
 
 def createFigure(data: dict[str, List[Any]], output: str) -> None:
