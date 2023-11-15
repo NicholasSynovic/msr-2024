@@ -148,7 +148,7 @@ def mergeTables(tags: DataFrame, modelTags: DataFrame, models: DataFrame) -> Dat
                                                                                         "name"
                                                                                     ]
                                                                                     == "conversational",
-                                                                                    "Natural Language PRocessing",
+                                                                                    "Natural Language Processing",
                                                                                     numpy.where(
                                                                                         bar[
                                                                                             "name"

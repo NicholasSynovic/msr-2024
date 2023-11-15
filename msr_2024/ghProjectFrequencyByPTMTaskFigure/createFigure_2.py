@@ -1,9 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas
-from matplotlib.axes import Axes
 from matplotlib.colors import XKCD_COLORS
-from matplotlib.container import BarContainer
-from matplotlib.patches import Rectangle
 from pandas import DataFrame
 
 FONTSIZE: int = 12
@@ -17,36 +14,26 @@ def main() -> None:
     pivot: DataFrame = df.pivot(
         index="domain", columns="task_name", values="project_count"
     )
+    pivot.plot(kind="bar", figsize=(20, 6))
 
-    ax = pivot.plot(kind="bar", figsize=(30, 6))
-
-    non_zero_data = {"domain": [], "task_name": [], "project_count": []}
-    for container in ax.containers:
-        for bar, (domain, task_name) in zip(container, pivot.index):
-            if bar.get_height() != 0:
-                non_zero_data["domain"].append(domain)
-                non_zero_data["task_name"].append(task_name)
-                non_zero_data["project_count"].append(bar.get_height())
-
-    # Creating New DataFrame from Non-Zero Data
-    new_df = DataFrame(non_zero_data)
-
-    # Pivot New DataFrame
-    new_pivot = new_df.pivot(
-        index="domain", columns="task_name", values="project_count"
-    )
-
-    # Clear the original plot and replot with new data
-    ax.clear()
-    new_pivot.plot(kind="bar", ax=ax)
-
-    # Rest of the plotting code
-    plt.title("Grouped Bar Chart")
-    plt.xlabel("Subcategory")
-    plt.ylabel("Values")
+    plt.title("Frequency of Applications per PTM Task")
+    plt.xlabel("PTM Task", fontsize=FONTSIZE)
+    plt.ylabel("Application Count", fontsize=FONTSIZE)
+    plt.yscale("log")
     plt.xticks(rotation=0)
     plt.legend(title="Category")
-    plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
+    plt.legend(loc="upper left", bbox_to_anchor=(1, 1), ncols=2)
+
+    for p in plt.gca().patches:
+        plt.gca().annotate(
+            str(p.get_height()),
+            (p.get_x() + p.get_width() / 2.0, p.get_height()),
+            ha="center",
+            va="center",
+            xytext=(0, 10),
+            textcoords="offset points",
+        )
+
     plt.tight_layout()
 
     plt.savefig("frequencyOfApplicationsPerPTMTask_test.pdf")
