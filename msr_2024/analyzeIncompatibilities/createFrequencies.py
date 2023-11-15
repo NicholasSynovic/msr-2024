@@ -216,17 +216,17 @@ plt.barh(indices, incompatibilityFrequencies, bar_width, color="darkred", label=
 # Create a horizontal bar chart for total frequencies
 plt.barh(indices + bar_width, totalFrequencies, bar_width, color="lightblue", label="Total Licenses")
 
-# Add labels and title
-plt.xlabel("Frequencies")
-plt.ylabel("GH License Type")
-plt.title("GH License Types vs. License Incompatibility Frequencies Relative to Total Frequency of GH License Type")
+# Add labels and title with increased text size
+plt.xlabel("Frequencies", fontsize=15)
+plt.ylabel("GH License Type", fontsize=15)
+plt.title("GH License Types vs. License Incompatibility Frequencies Relative to Total Frequency of GH License Type", fontsize=17)
 
 # Display the chart with a legend
-plt.yticks(indices + bar_width / 2, licenseTypes)  # Set the y-tick labels
+plt.yticks(indices + bar_width / 2, licenseTypes, fontsize=12)  # Set the y-tick labels with increased text size
 plt.legend()
 
 for i, (total, incompatibility) in enumerate(zip(totalFrequencies, incompatibilityFrequencies)):
-    plt.text(total, i + bar_width / 2, str(total), va="center")
-    plt.text(incompatibility, i - bar_width / 2, str(incompatibility), va="center")
+    plt.text(total, i + bar_width / 2, str(total), va="center", fontsize=12)
+    plt.text(incompatibility, i - bar_width / 2, str(incompatibility), va="center", fontsize=12)
 
 plt.show()
