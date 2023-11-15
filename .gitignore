@@ -220,3 +220,4 @@ build-iPhoneSimulator/
 # Used by RuboCop. Remote config files pulled in from inherit_from directive.
 # .rubocop-https?--*
 *.tar*
+!data/result_5000_10000.json
