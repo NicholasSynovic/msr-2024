@@ -56,7 +56,7 @@ def loadTable(table: str, con: Connection) -> DataFrame:
 @click.command()
 @click.option(
     "-d",
-    "--db-filepath",
+    "--db",
     default="../../data/PeaTMOSS.db",
     type=Path,
     help="Path to PeaTMOSS to analyze",
@@ -70,13 +70,13 @@ def loadTable(table: str, con: Connection) -> DataFrame:
     help="Path to store application output",
     show_default=True,
 )
-def main(db_filepath: Path, output: Path) -> None:
-    dbFilepath: Path = Path(abspath(db_filepath))
+def main(db: Path, output: Path) -> None:
+    dbFilepath: Path = Path(abspath(db))
     outputFilepath: Path = Path(abspath(output))
 
     print(f"Reading data from {dbFilepath}...")
 
-    con: Connection = sqlite3.connect(database=db_filepath)
+    con: Connection = sqlite3.connect(database=db)
 
     models: DataFrame = loadTable(table="model", con=con)
     licenses: DataFrame = loadTable(table="license", con=con)
