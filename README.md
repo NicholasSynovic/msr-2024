@@ -10,6 +10,7 @@
       - [Optional: Setup `pre-commit`](#optional-setup-pre-commit)
     - [Execute Scripts](#execute-scripts)
   - [Required Data](#required-data)
+    - [Replace `data` Placeholder Files](#replace-data-placeholder-files)
 
 ## About
 
@@ -52,7 +53,19 @@ ______________________________________________________________________
 
 ## Required Data
 
-You will need to have access to the PeaTMOSS dataset.
+You will need to have access to the *PeaTMOSS* dataset.
 
-You can find out more information about how to access this dataset at it's
-GitHub repository>
+You can find out more information about how to access this dataset at
+[it's GitHub repository](https://github.com/PurdueDualityLab/PeaTMOSS-Demos/tree/main).
+
+### Replace `data` Placeholder Files
+
+Within the `data` folder exists file with the following pattern:
+
+- `FILENAME.EXTENSION.gitkeep`
+
+These are *empty* files that can be left alone or deleted with no consequences.
+However, the relevant file (i.e `PeaTMOSS.db`) needs to be copied from the
+*PeaTMOSS* dataset into the same directory of the files with the above pattern
+for **scripts to operate with their default commandline values**. If you are not
+using the script defaults, you can ignore this section.
