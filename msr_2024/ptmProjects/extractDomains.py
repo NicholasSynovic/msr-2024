@@ -1,12 +1,14 @@
 from json import load
+from pathlib import Path
 from typing import Any, List
 
+import click
 import pandas
 from pandas import DataFrame
 from progress.bar import Bar
 
 
-def loadJSONData(filepath: str) -> List[dict[str, Any]]:
+def loadJSONData(filepath: Path) -> List[dict[str, Any]]:
     data: List[dict[str, Any]] = []
 
     with open(file=filepath, mode="r") as jsonFile:
@@ -37,11 +39,28 @@ def constructDF(data: dict[str, Any], modelID: int) -> DataFrame | None:
     return DataFrame(data=foo)
 
 
-def main() -> None:
+@click.command()
+@click.option(
+    "-i",
+    "--input-filepath",
+    default="../../data/result_5000_10000.json",
+    type=Path,
+    help="Path to input data file to extract domains from",
+    show_default=True,
+)
+@click.option(
+    "-o",
+    "--output",
+    default="../../data/domains/ptmProjectDomains.json",
+    type=Path,
+    help="Path to output data from",
+    show_default=True,
+)
+def main(input_filepath: Path, output: Path) -> None:
     dfList: List[DataFrame | None] = []
 
     models: List[dict[str, Any]] = loadJSONData(
-        filepath="../../data/result_5000_10000.json"
+        filepath=input_filepath,
     )
 
     with Bar(message="Creating DataFrames... ", max=len(models)) as bar:
@@ -53,9 +72,7 @@ def main() -> None:
 
     df: DataFrame = pandas.concat(objs=dfList, ignore_index=True)
 
-    df.drop_duplicates(ignore_index=True).T.to_json(
-        path_or_buf="ptmDomains.json", indent=4
-    )
+    df.drop_duplicates(ignore_index=True).T.to_json(path_or_buf=output, indent=4)
 
 
 if __name__ == "__main__":
