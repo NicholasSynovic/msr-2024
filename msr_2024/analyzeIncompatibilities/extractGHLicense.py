@@ -5,7 +5,7 @@ import sys
 import re
 
 # Specify the folder containing the JSON files
-json_folder = "../../../scancode_licenses/" # "test/"
+json_folder = "../../../scancode_licenses/" 
 
 # Files to look at
 locations = ["license", "license.txt", "license.md", "license.rst", 
@@ -72,7 +72,7 @@ for i, json_file in enumerate(json_files, start=1):
         unique_licenses = list(set(unique_licenses))
 
     # Store the unique licenses for this repository in the results dictionary
-    results[repo_name] = unique_licenses
+    results[repo_name.replace("_", "/", 1)] = unique_licenses # replace first occurence of "_" with "/" in the repo name since github usernames are not allowed to have "_" in them, thus the "_" in the repo name is the stand in for "/" 
 
     # Update the counter string
     counter_str = f"\rProcessed {i}/{total_json_files} JSON files"
