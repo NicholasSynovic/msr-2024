@@ -1,7 +1,10 @@
 from json import load
+from os.path import abspath
+from pathlib import Path
 from types import NoneType
 from typing import Any, List
 
+import click
 import pandas
 from pandas import DataFrame
 from progress.bar import Bar
@@ -143,12 +146,31 @@ def constructDF(data: dict[str, Any], modelID: int) -> DataFrame | None:
     return DataFrame(data=foo)
 
 
-def main() -> None:
+@click.command()
+@click.option(
+    "-i",
+    "--input",
+    default="../../data/result_5000_10000.json",
+    type=Path,
+    help="Path to input data file to extract domains from",
+    show_default=True,
+)
+@click.option(
+    "-o",
+    "--output",
+    default="../../data/metadata/ptmProjectMetadata.json",
+    type=Path,
+    help="Path to output data from",
+    show_default=True,
+)
+def main(input: Path, output: Path) -> None:
     dfList: List[DataFrame | None] = []
+    inputFilepath: Path = Path(abspath(input))
+    outputFilepath: Path = Path(abspath(output))
 
-    models: List[dict[str, Any]] = loadJSONData(
-        filepath="../../data/result_5000_10000.json"
-    )
+    print(f"Reading data from {inputFilepath}")
+
+    models: List[dict[str, Any]] = loadJSONData(filepath=inputFilepath)
 
     with Bar(message="Creating DataFrames... ", max=len(models)) as bar:
         model: dict[str, Any]
@@ -159,7 +181,8 @@ def main() -> None:
 
     df: DataFrame = pandas.concat(objs=dfList, ignore_index=True)
 
-    df.T.to_json(path_or_buf="countMetadataPerPTM.json", indent=4)
+    print(f"Writing data to {outputFilepath}")
+    df.T.to_json(path_or_buf=outputFilepath, indent=4)
 
 
 if __name__ == "__main__":
