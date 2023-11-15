@@ -1,9 +1,11 @@
 from json import load
 from os import listdir
+from os.path import abspath
 from pathlib import Path
 from pprint import pprint
 from typing import Any, List
 
+import click
 import pandas
 from pandas import DataFrame
 from progress.bar import Bar
@@ -53,12 +55,31 @@ def printFilenames(df: DataFrame) -> None:
     pprint(filenames)
 
 
-def main() -> None:
+@click.command()
+@click.option(
+    "-d",
+    "--dir",
+    default="../../data/licenses/ghLicenses",
+    type=Path,
+    help="Path to directory containing individual repository license analysis from scancode to analyze",
+    show_default=True,
+)
+@click.option(
+    "-o",
+    "--output",
+    default="../../data/licenses/ghRepoLicenses.json",
+    type=Path,
+    help="Path to store application output",
+    show_default=True,
+)
+def main(dir: Path, output: Path) -> None:
+    dirFilepath: Path = Path(abspath(dir))
+    outputFilepath: Path = Path(abspath(output))
+
+    print(f"Reading data from {dirFilepath}...")
+
     dfs: List[DataFrame] = []
-    files: List[Path] = [
-        Path("../../data/ghLicenses", file)
-        for file in listdir(path="../../data/ghLicenses")
-    ]
+    files: List[Path] = [Path(dirFilepath, file) for file in listdir(path=dirFilepath)]
 
     with Bar(message="Loading JSON data... ", max=len(files)) as bar:
         file: Path
@@ -69,7 +90,8 @@ def main() -> None:
     df: DataFrame = pandas.concat(objs=dfs, ignore_index=True)
     df.sort_values(by="project", axis=0, inplace=True, ignore_index=True)
 
-    df.T.to_json(path_or_buf="ghProjectLicense.json", indent=4)
+    print(f"Writing data to {outputFilepath}...")
+    df.T.to_json(path_or_buf=outputFilepath, indent=4)
 
 
 if __name__ == "__main__":
