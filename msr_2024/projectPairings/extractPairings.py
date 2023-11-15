@@ -1,7 +1,10 @@
 import sqlite3
+from os.path import abspath
+from pathlib import Path
 from sqlite3 import Connection
 from typing import List
 
+import click
 import pandas
 from pandas import DataFrame
 
@@ -58,9 +61,30 @@ def loadTable(table: str, con: Connection) -> DataFrame:
     return df
 
 
-def main() -> None:
-    baz: List[str] = []
-    con: Connection = sqlite3.connect(database="../../data/PeaTMOSS.db")
+@click.command()
+@click.option(
+    "-d",
+    "--db",
+    default="../../data/PeaTMOSS.db",
+    type=Path,
+    help="Path to PeaTMOSS to analyze",
+    show_default=True,
+)
+@click.option(
+    "-o",
+    "--output",
+    default="../../data/mapping/ghRepo_to_ptmProject.json",
+    type=Path,
+    help="Path to store application output",
+    show_default=True,
+)
+def main(db: Path, output: Path) -> None:
+    dbFilepath: Path = Path(abspath(db))
+    outputFilepath: Path = Path(abspath(output))
+
+    print(f"Reading data from {dbFilepath}...")
+
+    con: Connection = sqlite3.connect(database=dbFilepath)
 
     models: DataFrame = loadTable(table="model", con=con)
     projects: DataFrame = loadTable(table="reuse_repository", con=con)
@@ -75,21 +99,25 @@ def main() -> None:
     )
 
     foo: DataFrame = postProcess(df=df)
-    foo.T.to_json(path_or_buf="ptmProjectPairs.json")
 
-    bar: List[str] = foo["Project URL"].to_list()
+    print(f"Writing data to {outputFilepath}...")
+    foo.T.to_json(path_or_buf=outputFilepath, indent=4, index=False)
 
-    url: str
-    for url in bar:
-        splitURL: List[str] = url.split(sep="/")
-        author: str = splitURL[-2]
-        repo: str = splitURL[-1]
-        baz.append(f"{author}_{repo}\n")
 
-    baz = sorted(baz)
-    with open(file="mappedGitHubProjects.txt", mode="w") as mgp:
-        mgp.writelines(baz)
-        mgp.close()
+#   baz: List[str] = []
+#    bar: List[str] = foo["Project URL"].to_list()
+
+#    url: str
+#    for url in bar:
+#        splitURL: List[str] = url.split(sep="/")
+#        author: str = splitURL[-2]
+#        repo: str = splitURL[-1]
+#        baz.append(f"{author}_{repo}\n")
+
+#     baz = sorted(baz)
+#     with open(file="mappedGitHubProjects.txt", mode="w") as mgp:
+#         mgp.writelines(baz)
+#         mgp.close()
 
 
 if __name__ == "__main__":
