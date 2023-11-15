@@ -1,4 +1,5 @@
 import sqlite3
+from os.path import abspath
 from pathlib import Path
 from sqlite3 import Connection
 
@@ -70,6 +71,11 @@ def loadTable(table: str, con: Connection) -> DataFrame:
     show_default=True,
 )
 def main(db_filepath: Path, output: Path) -> None:
+    dbFilepath: Path = Path(abspath(db_filepath))
+    outputFilepath: Path = Path(abspath(output))
+
+    print(f"Reading data from {dbFilepath}...")
+
     con: Connection = sqlite3.connect(database=db_filepath)
 
     models: DataFrame = loadTable(table="model", con=con)
@@ -84,6 +90,7 @@ def main(db_filepath: Path, output: Path) -> None:
         modelLicensePairs=modelLicensePairs,
     )
 
+    print(f"Writing data to {outputFilepath}...")
     postProcess(df=df).to_json(path_or_buf=output, indent=4)
 
 
