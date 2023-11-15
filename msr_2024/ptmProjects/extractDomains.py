@@ -1,4 +1,5 @@
 from json import load
+from os.path import abspath
 from pathlib import Path
 from typing import Any, List
 
@@ -42,7 +43,7 @@ def constructDF(data: dict[str, Any], modelID: int) -> DataFrame | None:
 @click.command()
 @click.option(
     "-i",
-    "--input-filepath",
+    "--input",
     default="../../data/result_5000_10000.json",
     type=Path,
     help="Path to input data file to extract domains from",
@@ -56,11 +57,15 @@ def constructDF(data: dict[str, Any], modelID: int) -> DataFrame | None:
     help="Path to output data from",
     show_default=True,
 )
-def main(input_filepath: Path, output: Path) -> None:
+def main(input: Path, output: Path) -> None:
+    inputFilepath: Path = Path(abspath(input))
+    outputFilepath: Path = Path(abspath(output))
+
+    print(f"Reading data from {inputFilepath}")
     dfList: List[DataFrame | None] = []
 
     models: List[dict[str, Any]] = loadJSONData(
-        filepath=input_filepath,
+        filepath=inputFilepath,
     )
 
     with Bar(message="Creating DataFrames... ", max=len(models)) as bar:
@@ -72,7 +77,11 @@ def main(input_filepath: Path, output: Path) -> None:
 
     df: DataFrame = pandas.concat(objs=dfList, ignore_index=True)
 
-    df.drop_duplicates(ignore_index=True).T.to_json(path_or_buf=output, indent=4)
+    print(f"Writing data to {outputFilepath}")
+    df.drop_duplicates(ignore_index=True).T.to_json(
+        path_or_buf=outputFilepath,
+        indent=4,
+    )
 
 
 if __name__ == "__main__":
