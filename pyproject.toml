@@ -18,6 +18,7 @@ pysankey = "^0.0.1"
 matplotlib = "^3.8.1"
 seaborn = "^0.13.0"
 sqlalchemy = "^2.0.23"
+tqdm = "^4.66.1"
 
 
 [build-system]
