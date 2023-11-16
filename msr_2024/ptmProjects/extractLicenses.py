@@ -1,6 +1,9 @@
 import sqlite3
+from os.path import abspath
+from pathlib import Path
 from sqlite3 import Connection
 
+import click
 import pandas
 from pandas import DataFrame
 
@@ -50,8 +53,30 @@ def loadTable(table: str, con: Connection) -> DataFrame:
     return df
 
 
-def main() -> None:
-    con: Connection = sqlite3.connect(database="../../data/PeaTMOSS.db")
+@click.command()
+@click.option(
+    "-d",
+    "--db",
+    default="../../data/PeaTMOSS.db",
+    type=Path,
+    help="Path to PeaTMOSS to analyze",
+    show_default=True,
+)
+@click.option(
+    "-o",
+    "--output",
+    default="../../data/licenses/ptmProjectLicenses.json",
+    type=Path,
+    help="Path to store application output",
+    show_default=True,
+)
+def main(db: Path, output: Path) -> None:
+    dbFilepath: Path = Path(abspath(db))
+    outputFilepath: Path = Path(abspath(output))
+
+    print(f"Reading data from {dbFilepath}...")
+
+    con: Connection = sqlite3.connect(database=db)
 
     models: DataFrame = loadTable(table="model", con=con)
     licenses: DataFrame = loadTable(table="license", con=con)
@@ -65,7 +90,8 @@ def main() -> None:
         modelLicensePairs=modelLicensePairs,
     )
 
-    postProcess(df=df).to_json(path_or_buf="ptmLicenses.json")
+    print(f"Writing data to {outputFilepath}...")
+    postProcess(df=df).to_json(path_or_buf=output, indent=4)
 
 
 if __name__ == "__main__":
