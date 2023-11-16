@@ -210,23 +210,34 @@ indices = np.arange(len(licenseTypes))
 # Set the width of the bars
 bar_width = 0.4
 
+fig, ax = plt.subplots(figsize=(8, 6))  # Adjust the values based on your requirement
+
 # Create a horizontal bar chart for incompatibility frequencies
-plt.barh(indices, incompatibilityFrequencies, bar_width, color="darkred", label="Number of Incompatibilities")
+ax.barh(indices, incompatibilityFrequencies, bar_width, color="darkred", label="Number of Incompatibilities")
 
 # Create a horizontal bar chart for total frequencies
-plt.barh(indices + bar_width, totalFrequencies, bar_width, color="lightblue", label="Total Licenses")
+ax.barh(indices + bar_width, totalFrequencies, bar_width, color="lightblue", label="Total Licenses")
 
 # Add labels and title with increased text size
-plt.xlabel("Frequencies", fontsize=15)
-plt.ylabel("GH License Type", fontsize=15)
-plt.title("GH License Types vs. License Incompatibility Frequencies Relative to Total Frequency of GH License Type", fontsize=17)
+ax.set_xlabel("Frequencies", fontsize=18)
+ax.set_ylabel("GH License Type", fontsize=18)
+ax.set_title("GH License Types vs. License Incompatibility Frequencies\nRelative to Total Frequency of GH License Type", fontsize=20, )
 
 # Display the chart with a legend
-plt.yticks(indices + bar_width / 2, licenseTypes, fontsize=12)  # Set the y-tick labels with increased text size
-plt.legend()
+ax.set_yticks(indices + bar_width / 2)
+ax.set_yticklabels(licenseTypes, fontsize=18)  # Set the y-tick labels with increased text size
+ax.legend()
 
 for i, (total, incompatibility) in enumerate(zip(totalFrequencies, incompatibilityFrequencies)):
-    plt.text(total, i + bar_width / 2, str(total), va="center", fontsize=12)
-    plt.text(incompatibility, i - bar_width / 2, str(incompatibility), va="center", fontsize=12)
+    ax.text(total, i + bar_width, str(total), va="center", fontsize=17)
+    ax.text(incompatibility, i - 0*bar_width, str(incompatibility), va="center", fontsize=17)
+
+offset = 15
+ax.spines['right'].set_position(("outward", offset))
+ax.spines['top'].set(bounds=(0,4625+offset*6))
+ax.spines['bottom'].set(bounds=(0,4625+offset*6))
+
+plt.subplots_adjust(left=0.14)
+plt.subplots_adjust(right=0.959)
 
 plt.show()
