@@ -1,17 +1,54 @@
-1. Document how to add licenses into Nate's conflict analysis code (plus the link to the Linux Foundation table he found)
-    need to add linux foundation table I've found and am looking to use still https://events19.linuxfoundation.org/wp-content/uploads/2018/07/OSLS-2019-Fulfilling-Open-Source-license-obligations-Can-checklists-help.pdf (slide 32)
-    currently licenses are hardcoded in createFrequencies.py, incorporating the linux foundation OSS license compatibility table will remove these hardcoded incompatibilities, then the table needs to be expanded upon to include the additional relationships present in the dataset ("no license" -> {OSS license}; {CC license} -> {OSS license}, etc.)
-2. Push Nate's conflict analysis code to github
-    DONE
+analyzeIncompatibilities.py
 
-3. Understand what files licensee looks at
-    ["license", "license.txt", "license.md", "license.rst", "readme", "readme.txt", "readme.md", "readme.rst"]
-4. Write a program to find those paths in the scancode output and produce (from scancode output on a single repo) a file of the form { 'repo': 'X/Y', 'license': 'XXX', 'licenseFilename': 'XXX' } or similar. Test this on the two examples Nick provided.
-    {"repo":"license"}
-    all_gh_licenses.json
-5. Run that program across Nick's dataset
-    done
+This Python script, analyzeIncompatibilities.py, is designed to display the count of license incompatibilities by license type between licenses in Hugging Face and the GitHub repository's license utilizing the Hugging Face PreTrained Model (PTM). Below are the necessary variables that you need to set before running the script.
 
-TODO - need to update createFrequencies.py with new table and relations
-6. Update the license conflict analysis code and ingest the full dataset (using the HF <-> GH mappings with the extra license data)
-    a. Start with a sample of 5K, then expand to the full set of HF <-> GH mappings
+Necessary Globals to Set:
+1. hf_license_to_gh_repo_csv
+2. gh_repo_url_col
+3. hf_license_col
+4. gh_repo_to_gh_license_json
+
+see example.csv for the minimal format of an inputted .csv
+
+The CSV file should have at least two columns: one for the GitHub repository's URL and another for the corresponding license of the utilized PTM from Hugging Face.
+In the case of example.csv, gh_repo_url_col=0 and hf_license_col=1.
+
+see exampleJSON.md for the format of an inputted .json
+
+The JSON file should contain a mapping of GitHub repositories to their corresponding licenses as key-list pairs. The key should be the GitHub "{username}/{repo}" found in the URL of a GitHub repository. The paired list to the key is any applicable licenses to the GitHub repository. Licenses in this project are stored by their SPDX Identifier.
+
+Optional Globals to Manipulate:
+1. aliases
+    Dictionary of Key-Value pairs
+    Stores an alias to a license as a key and the SPDX Identifier as the value
+2. knownMapping
+    Dictionary of Key-List Pairs
+    Stores licenses from the Hugging Face data as keys mapped to a list of known compatible or incompatible relationships to licenses used in the GitHub data
+3. incompatibleMapping
+    Dictionary of Key-List Pairs
+    Stores licenses from the Hugging Face data as keys mapped to a list of incompatible relationships to licenses used in the GitHub data
+4. licenseTypeMapping
+    Dictionary of Key-List Pairs
+    Stores license types as keys mapped to a list of licenses in the GitHub data of that license type
+
+Note: known relationships added to 'knownMapping' should also update 'incompatibleMapping' if the relationship is incompatible, and 'licenseTypeMapping' if the GitHub license is not found in the list for its applicable license type key.
+
+Executing the Script:
+To run the script, execute the following command or equivalent in your terminal or command prompt:
+python .\analyzeIncompatibilities.py
+
+This will execute the script and display the "GH License Types vs. License Incompatibility Frequencies Relative to Total Frequency of GH License Type" chart.
+
+Also, written to stdout is:
+1. other count
+    Number of relations including a license of the 'other' type or equivalent.
+2. other percent
+    Percent of total relations including a license of the 'other' type or equivalent.
+3. unkown relations count
+    Number of relations which are not present in 'knownMapping'.
+4. unkown relations percent
+    Percent of total relations which are not present in 'knownMapping'.
+5. GH repos not found
+    Any '{username}/{repo}' keys which are not found in 'gh_repo_to_gh_license_json'.
+6. unkown mappings HF->GH
+    List of key:set() pairs where key is the HF license  of the relation not found in 'knownMapping' mapping to the set of key:value pairs where the key is the GH license mapping to the number of occurences that relation occurs.

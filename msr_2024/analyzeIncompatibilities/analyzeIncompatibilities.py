@@ -1,17 +1,22 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import re
 import json
 import sys
-import ast
+
+# file paths for hf license -> gh license relations
+hf_license_to_gh_repo_csv = "mapping.csv"
+gh_repo_url_col = 0
+hf_license_col = 3
+
+gh_repo_to_gh_license_json = "all_gh_licenses.json"
 
 # Load data from hf_gh_licenses.json
-df = pd.read_excel("../../../repo_license_downstream_hf_no_filter.xlsx")
+df = pd.read_csv(hf_license_to_gh_repo_csv, header=None)
 
 # Load data from the GH JSON file as text
-with open("all_gh_licenses.json", 'r', encoding='utf-8') as f:
+with open(gh_repo_to_gh_license_json, 'r', encoding='utf-8') as f:
     GH_data = f.read()
 
 # Attempt to load the JSON data as a Python dictionary
@@ -19,17 +24,17 @@ try:
     GH_license_dict = json.loads(GH_data)
 except json.JSONDecodeError as e:
     # If decoding fails, set the value to None
-    print(f"Error decoding 'all_gh_licenses.json': {e}")
+    print(f"Error decoding {gh_repo_to_gh_license_json}: {e}")
     exit()
 
-
+# known aliases in analyzed data
 aliases = {
     "bsd-new": "bsd-3-clause",
     "bsd-modified": "bsd-3-clause",
     "bsd-simplified": "bsd-2-clause",
 }
 
-# known relationships from HF to GH licenses
+# known relationships from HF to GH licenses in analyzed data
 knownMapping = { 
     "apache-2.0": ["bsd-3-clause", "agpl-3.0", "cc0-1.0", "mit", "gpl-3.0", "no license", "apache-2.0", "cc-by-sa-4.0", 'proprietary-license', 'python'],
     "mit": ["mit", "no license", "apache-2.0", "cc-by-sa-4.0", 'proprietary-license', 'cc-by-4.0', 'cc-by-nc-4.0'],
@@ -56,7 +61,21 @@ knownMapping = {
     'upl-1.0':[],
     'bsd-3-clause-clear':[],
     'bsl-1.0':[],
-    'osl-3.0':[]
+    'osl-3.0':[],
+    'bigcode-openrail-m':[],
+    'openrail++':[],
+    'bsd':[], # not a known license, counting number of relations with this instance (is the license publisher, not the license) 
+    'creativeml-openrail-m':[],
+    'cc-by-sa-3.0':[],
+    'deepfloyd-if-license':[],
+    'bigscience-openrail-m':[],
+    'openrail':[],
+    'cc':[], # not a known license, counting number of relations with this instance (is the license publisher, not the license)
+    'lgpl-lr':[],
+    'cc-by-nc-sa-3.0':[],
+    'cc-by-2.0':[],
+    'gpl':[], # not a known license, counting number of relations with this instance (is the license publisher, not the license)
+    'cc-by-nc-nd-4.0':[]    
 }
 allHFlicenses = list(knownMapping.keys()) 
 unkownMappings = {} # this will be filled in with the unknown mappings from HF to GH licenses, and printed out at the end of the script
@@ -105,7 +124,7 @@ def extract_repo_name(url):
     url = url.replace(r"\/", "/")
     
     # Use regular expression to extract repo name
-    match = re.search(r"github\.com\/([^\/]+\/[^\/]+)$", url)
+    match = re.search(r"github\.com[\/:](.+\/.+?)(?:\.git)?$", url)
     
     if match:
         return match.group(1)
@@ -117,28 +136,24 @@ totalFrequencies = [0, 0, 0, 0, 0, 0]
 other_count = 0
 unkownrelations = 0
 gh_repos_not_found = []
-no_gh_repo_cnt = 0
-for j, row in df.iloc[1:].iterrows():  # Starting from the second row to exclude column titles
+for cnt, row in df.iterrows():  # Starting from the second row to exclude column titles
     # display count
-    counter_str = f"\rProcessed {j}/{df.shape[0]-1} relations"
+    counter_str = f"\rProcessed {cnt}/{df.shape[0]-1} relations"
     sys.stdout.write(counter_str)
     sys.stdout.flush()
     
-    # begin analysis
-    if(not pd.notna(row['license'])):
+    # get HF and GH licenses
+    if(not pd.notna(row[hf_license_col])):
         hf_license = "no license"
     else:
-        dictionary_value = ast.literal_eval(row['license'])
-        hf_license = dictionary_value["key"]
-    if(not pd.notna(row['github_url'])):
-        no_gh_repo_cnt += 1
-        continue    
-    gh_repo_name = extract_repo_name(row['github_url'])
+        hf_license = row[hf_license_col].lower()
+    gh_repo_name = extract_repo_name(row[gh_repo_url_col])
     if gh_repo_name not in GH_license_dict.keys():
         gh_repos_not_found.append(gh_repo_name)
         continue
     gh_license = GH_license_dict[gh_repo_name]
     
+    # process current GH and HF Licenses
     if type(gh_license) is type(None):
         gh_license = ["no license"]
     if gh_license is None or not gh_license:
@@ -148,7 +163,7 @@ for j, row in df.iloc[1:].iterrows():  # Starting from the second row to exclude
     if not pd.notna(hf_license) or hf_license == "unlicense":
         hf_license = "no license"
         
-    if hf_license=="other" or hf_license=='unknown-license-reference' or hf_license=='warranty-disclaimer' or hf_license=='generic-cla' or hf_license=='commercial-license':
+    if hf_license=="other" or hf_license=='unkown' or hf_license=='unknown-license-reference' or hf_license=='warranty-disclaimer' or hf_license=='generic-cla' or hf_license=='commercial-license':
         other_count += 1
         continue
     if hf_license in aliases.keys():
@@ -162,7 +177,7 @@ for j, row in df.iloc[1:].iterrows():  # Starting from the second row to exclude
         (unkownMappings[hf_license].add(l) for l in gh_license)
         continue
     for l in gh_license:
-        if(l=="other" or l=="unlicense" or l=='unknown-license-reference' or l=='warranty-disclaimer' or l=='generic-cla' or l=='commercial-license'):
+        if(l=="other" or l=="unlicense"  or l=='unkown' or l=='unknown-license-reference' or l=='warranty-disclaimer' or l=='generic-cla' or l=='commercial-license'):
             other_count += 1
             continue
         if(l in aliases.keys()):
@@ -199,9 +214,8 @@ for j, row in df.iloc[1:].iterrows():  # Starting from the second row to exclude
 print()
 print("other count: ", other_count)
 print("other percent: ", 100*other_count/(df.shape[0]-1))
-print("unkown relations", unkownrelations)
-print("unkown relations", 100*unkownrelations/(df.shape[0]-1))
-print("no gh repo count: ", no_gh_repo_cnt) # 0.0000000
+print("unkown relations count:", unkownrelations)
+print("unkown relations percent:", 100*unkownrelations/(df.shape[0]-1))
 print("GH repos not found: ", set(gh_repos_not_found))
 print("unkown mappings HF->GH: ", unkownMappings)
 # Create an array of indices for the license types
@@ -232,10 +246,10 @@ for i, (total, incompatibility) in enumerate(zip(totalFrequencies, incompatibili
     ax.text(total, i + bar_width, str(total), va="center", fontsize=17)
     ax.text(incompatibility, i - 0*bar_width, str(incompatibility), va="center", fontsize=17)
 
-offset = 15
+offset = 18
 ax.spines['right'].set_position(("outward", offset))
-ax.spines['top'].set(bounds=(0,4625+offset*6))
-ax.spines['bottom'].set(bounds=(0,4625+offset*6))
+# ax.spines['top'].set(bounds=(0,4625+offset*6))
+# ax.spines['bottom'].set(bounds=(0,4625+offset*6))
 
 plt.subplots_adjust(left=0.14)
 plt.subplots_adjust(right=0.959)
