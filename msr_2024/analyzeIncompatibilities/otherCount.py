@@ -1,11 +1,10 @@
 import pandas as pd
-import plotly.graph_objects as go
-import numpy as np
 import re
 import json
 import sys
+import csv
 
-otherNum = 500
+otherNum = 100
 
 # file paths for hf license -> gh license relations
 hf_license_to_gh_repo_csv = "mapping.csv"
@@ -103,21 +102,22 @@ for cnt, row in df.iterrows():
         else:
             gh_license_count[l] += 1
             
-print("hf 'other':")
-print('[', end='')
+hf_other = []
+gh_other = []
+
 for l in hf_license_count.keys():
     if(hf_license_count[l] <= otherNum):
-        print("'", end='')
-        print(l, end='')
-        print("'", end=', ')
+        hf_other.append(l)
         
         
-print("]\ngh 'other':\n[", end='')
 for l in gh_license_count.keys():
     if(gh_license_count[l] <= otherNum):
-        print("'", end='')
-        print(l, end='')
-        print("'", end=', ')
+        gh_other.append(l)
         
-print(']')
-        
+
+with open('hf_other.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(hf_other)
+with open('gh_other.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(gh_other)

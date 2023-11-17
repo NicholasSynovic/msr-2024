@@ -4,14 +4,16 @@ import re
 import json
 import sys
 
-# licenses in sankey 'other' due to count being <=3
-hf_other = ['bigcode-openrail-m', 'bigscience-bloom-rail-1.0', 'cc-by-nc-4.0', 'bsd-3-clause', 'cc-by-nc-sa-4.0', 'other', 'cc-by-sa-4.0', 'openrail', 'cc-by-4.0', 'bsd', 'afl-3.0', 'gpl-3.0', 'creativeml-openrail-m', 'cc-by-sa-3.0', 'agpl-3.0', 'deepfloyd-if-license', 'bigscience-openrail-m', 'cc', 'lgpl-lr', 'cc-by-nc-sa-3.0', 'cc-by-2.0', 'gpl', 'cc-by-nc-nd-4.0', ]
-gh_other = ['other', 'bsd-2-clause', 'proprietary-license', 'cc-by-nc-4.0', 'agpl-3.0', 'cc-by-sa-4.0', 'amazon-sl', 'free-unknown', 'cc-by-4.0', 'commons-clause', 'cc0-1.0', 'gpl-2.0', 'cc-by-nc-sa-4.0', 'apache-2.0 WITH llvm-exception', 'gpl-2.0 WITH classpath-exception-2.0', 'cddl-1.1', 'boost-1.0', 'cc-by-sa-3.0', 'stable-diffusion-2022-08-22', 'cecill-c', 'mpl-2.0', 'gpl-1.0-plus', 'gpl-2.0-plus', 'philippe-de-muyter', 'gpl-3.0 WITH gpl-generic-additional-terms', 'gpl-3.0-plus', 'agpl-3.0-plus', 'cc-by-3.0-us', 'apple-excl', 'lgpl-2.1', 'epl-2.0', 'historical', 'secret-labs-2011', 'psf-3.7.2', 'python', 'bsl-1.1', 'cc-by-3.0', 'cc-by-sa-2.0', 'public-domain', 'cc-by-nc-nd-4.0', 'upl-1.0', 'bsd-2-clause-views', 'mit-0', 'lgpl-3.0', 'us-govt-public-domain', 'lgpl-2.0-plus', 'hippocratic-1.2', 'hippocratic-1.1', 'gcc-exception-3.1', 'fsf-unlimited', 'bsd-source-code', 'issl-2018', 'protobuf', 'bsd-ack', 'gpl-2.0-plus WITH libtool-exception-2.0', 'unicode', 'intel-bsd', 'uoi-ncsa', 'minpack', 'zlib', 'isc', 'bsd-3-clause-open-mpi', 'naist-2003', 'hs-regexp', 'gpl-3.0-plus WITH gcc-exception-3.1', 'lgpl-2.1-plus', 'x11', 'libpng', 'clear-bsd', 'mit-old-style', 'lgpl-3.0-plus', 'x11-fsf', 'x11-xconsortium', 'gfdl-1.1-plus', 'cc-by-nc-sa-2.0', 'cc-by-nc-sa-3.0', 'elastic-license-v2', 'unixcrypt', 'cc-by-nc-2.0', 'gtpl-v3', 'cc-by-nc-3.0', 'openssl-ssleay', 'w3c-03-bsd-license', 'bsd-zero', 'x11-lucent', 'python-cwi', 'cc-by-2.5', 'zpl-2.1', 'mit-old-style-no-advert', 'json', 'odc-by-1.0', 'unknown-spdx', 'agpl-3.0 WITH agpl-generic-additional-terms', 'bsd-original', 'bsd-original-uc', 'ncgl-uk-2.0', 'cc-by-2.0', 'ibmpl-1.0', 'dco-1.1', 'mpl-1.0', 'robert-hubley', 'x11-tiff', 'wtfpl-2.0', 'mpl-1.1', 'ofl-1.1', 'cdla-permissive-2.0', 'mongodb-sspl-1.0', 'cecill-b', 'cecill-b-en', 'bsd-plus-patent', 'arm-llvm-sga', 'freetype-patent', 'anti-capitalist-1.4', 'freetype', 'apple-attribution-1997', 'cc-by-sa-2.5', 'cdla-permissive-1.0', 'llama-license-2023', 'sata', 'gpl-1.0', 'libpbm', 'bsd-1-clause', 'bsd-plus-mod-notice', 'eupl-1.2', 'cc-by-nc-sa-2.5', ]
+# licenses in sankey 'other' due to being less than the filter count
+df = pd.read_csv('hf_other.csv', header=None)
+hf_other = df.values.tolist()[0]
+df = pd.read_csv('gh_other.csv', header=None)
+gh_other = df.values.tolist()[0]
 
 # file paths for hf license -> gh license relations
 hf_license_to_gh_repo_csv = "mapping.csv"
 gh_repo_url_col = 0
-hf_license_col = 3
+hf_license_column = 3
 
 gh_repo_to_gh_license_json = "all_gh_licenses.json"
 
@@ -30,6 +32,7 @@ except json.JSONDecodeError as e:
     print(f"Error decoding {gh_repo_to_gh_license_json}: {e}")
     exit()
 
+
 # known aliases in analyzed data
 aliases = {
     "bsd-new": "bsd-3-clause",
@@ -38,82 +41,33 @@ aliases = {
     'openrail++':'openrail',    
 }
 
-# known relationships from HF to GH licenses in analyzed data
-# these are in no particular order
-knownMapping = { 
-    "apache-2.0": ["bsd-3-clause", "agpl-3.0", "cc0-1.0", "mit", "gpl-3.0", "no license", "apache-2.0", "cc-by-sa-4.0", 'proprietary-license', 'python', 'cc-by-nc-sa-4.0', 'cecill-c', 'cc-by-4.0', 'cc-by-nc-4.0', 'gpl-1.0-plus', 'gpl-3.0-plus', 'agpl-3.0-plus', 'bsd-2-clause', 'mit-0', 'lgpl-3.0', 'mpl-2.0', 'gpl-2.0'],
-    "mit": ["mit", "no license", "apache-2.0", "cc-by-sa-4.0", 'proprietary-license', 'cc-by-4.0', 'cc-by-nc-4.0', 'bsd-3-clause', 'bsd-2-clause', 'agpl-3.0', 'gpl-3.0', 'cc0-1.0', 'gpl-2.0', 'cc-by-nc-sa-4.0', 'mpl-2.0'],
-    "bigscience-bloom-rail-1.0": ["apache-2.0", "bigscience-bloom-rail-1.0", 'no license', 'mit', 'gpl-3.0', 'cc-by-sa-4.0', 'cc-by-nc-sa-4.0', 'cc-by-4.0', 'gpl-2.0', 'bsd-3-clause', 'agpl-3.0'],
-    "cc-by-4.0": ["no license", 'cc-by-4.0', 'mit', 'bsd-3-clause', 'proprietary-license', 'apache-2.0', 'cc-by-nc-sa-4.0'],
-    "afl-3.0": ["no license"],
-    "gpl-3.0": ["gpl-3.0", "no license", 'lgpl-3.0', 'agpl-3.0 WITH agpl-generic-additional-terms', 'cc-by-sa-2.5', 'gpl-2.0', 'gpl-3.0-plus', 'cc-by-4.0', 'cc-by-sa-4.0', 'cc-by-nc-sa-4.0', 'cc0-1.0', 'apache-2.0', 'cecill-c', 'bsd-3-clause', 'mit', 'cc-by-nc-4.0', 'gpl-1.0-plus', 'gpl-2.0-plus', 'proprietary-license', 'agpl-3.0', 'cc-by-sa-3.0'],
-    "gpl-2.0": ["gpl-2.0", "no license", "gpl-3.0", 'mpl-2.0', 'mit'],
-    "cc-by-nc-sa-4.0": ["no license", 'mit', 'apache-2.0', 'cc-by-4.0', 'cc-by-sa-3.0', 'gpl-3.0', 'bsd-3-clause', 'cc0-1.0', 'proprietary-license', 'cecill-c', 'cc-by-nc-sa-4.0', 'json', 'cc-by-nc-nd-4.0', 'cc-by-sa-4.0'],
-    "cc-by-nc-4.0": ["no license", 'mit', 'apache-2.0'],
-    "no license": ["mit", "gpl-3.0", "no license", "apache-2.0", 'cc-by-sa-4.0', 'proprietary-license', 'cc-by-nc-4.0', 'cc-by-nc-sa-4.0', 'cc-by-4.0'],
-    "agpl-3.0":["agpl-3.0", 'mit', 'cc-by-sa-4.0', 'cc-by-nc-sa-4.0', 'cc-by-nc-sa-3.0', 'no license', 'odc-by-1.0', 'apache-2.0'],
-    "bsd-3-clause":["bsd-3-clause", 'mit', 'apache-2.0', 'no license', ],
-    'cc0-1.0':['cc0-1.0'],
-    'cc-by-sa-4.0':['cc-by-sa-4.0',  'gpl-3.0', 'cc-by-sa-3.0','apache-2.0', 'no license', 'mit', 'agpl-3.0', 'bsd-2-clause', 'cc-by-nc-4.0', 'proprietary-license', 'cc-by-nc-sa-4.0', 'cc0-1.0', 'mpl-2.0'],
-    'bsd-2-clause':["bsd-2-clause"],
-    'mpl-2.0':[],
-    'mit-0':['mit-0'],
-    'lgpl-3.0':['no license', 'lgpl-3.0', 'lgpl-3.0-plus', 'gpl-3.0'],
-    'lgpl-2.1':['gpl-1.0-plus', 'lgpl-2.1'],
-    'epl-2.0':['epl-2.0'],
-    'isc':[],
-    'wtfpl':[],
-    'upl-1.0':[],
-    'bsd-3-clause-clear':[],
-    'bsl-1.0':[],
-    'osl-3.0':[],
-    'bsd':[], # not a license, counting number of relations (counted 2, not significant) with this instance in data (is the license publisher, not the license) 
-    'cc-by-sa-3.0':[],
-    'deepfloyd-if-license':[],
-    'openrail':['no license', 'proprietary-license', 'cc-by-nc-nd-4.0', 'cc-by-nc-4.0', 'apache-2.0', 'cc0-1.0', 'gpl-3.0', 'gpl-1.0-plus', 'mit', 'bsd-3-clause', 'lgpl-2.1', 'agpl-3.0', 'cecill-c'],
-    'bigcode-openrail-m':[],
-    'creativeml-openrail-m':['cc-by-nc-4.0', 'cc-by-nc-sa-4.0', 'cc-by-nc-nd-4.0', 'cc0-1.0', 'no license', 'apache-2.0', 'mit', 'apache-2.0 WITH llvm-exception', 'agpl-3.0', 'gpl-3.0', 'bsd-3-clause', 'bsd-2-clause', 'agpl-3.0-plus', 'mit-0', 'gpl-1.0-plus'],
-    'bigscience-openrail-m':['mit'],
-    'cc':[], # not a license, counting number of relations (counted 1, not significant) with this instance in data (is the license publisher, not the license)
-    'lgpl-lr':[],
-    'cc-by-nc-sa-3.0':[],
-    'cc-by-2.0':[],
-    'gpl':[], # not a license, counting number of relations (counted 1, not significant) with this instance in data (is the license publisher, not the license)
-    'cc-by-nc-nd-4.0':[]    
+# process Linux Foundation Compatabilities Table
+relationalTable = pd.read_excel("Linux-Foundation-OSS-License-Compatibility.xlsx")
+
+known_HF_licenses = list(relationalTable.columns)[1:]
+known_HF_licenses = known_HF_licenses[0:len(known_HF_licenses)-1] # remove the 'Compatabilities' cell, since it is not a license
+
+known_GH_licenses = relationalTable.iloc[:, 0].tolist()
+
+# function to get the compatibility of the licenses
+# returns int:
+#   1 - compatible
+#   0 - incompatible
+#  -1 - unknown
+val_dict = {
+    "?": -1,
+    "yes": 1,
+    "no": 0
 }
-allHFlicenses = list(knownMapping.keys()) 
-unkownMappings = {} # this will be filled in with the unknown mappings from HF to GH licenses, and printed out at the end of the script
-
-# this maps HF licenses to INCOMPATIBLE GH licenses as relevent to the sankey diagram (more incompatibilities are present, but only certain ones are relevent to the trained PTM only sankey diagram)
-incompatibleMapping = { 
-    "apache-2.0": [],
-    "mit": [],
-    "bigscience-bloom-rail-1.0": ["apache-2.0", 'mit', 'gpl-3.0', 'cc-by-sa-4.0', 'cc-by-nc-sa-4.0', 'cc-by-4.0', 'gpl-2.0', 'bsd-3-clause', 'agpl-3.0'],
-    "cc-by-4.0": ['cc-by-nc-sa-4.0'],
-    "afl-3.0": [],
-    "gpl-3.0": ["no license", 'cc-by-sa-2.5', 'gpl-2.0', 'gpl-3.0-plus', 'cc-by-4.0', 'cc-by-sa-4.0', 'cc-by-nc-sa-4.0', 'cc0-1.0', 'apache-2.0', 'cecill-c', 'bsd-3-clause', 'mit', 'cc-by-nc-4.0', 'gpl-1.0-plus', 'gpl-2.0-plus', 'proprietary-license', 'cc-by-sa-3.0'],
-    "gpl-2.0": ["no license", "gpl-3.0"],
-    "agpl-3.0": ["no license", 'mit', 'cc-by-sa-4.0', 'cc-by-nc-sa-4.0', 'cc-by-nc-sa-3.0', 'no license', 'odc-by-1.0', 'apache-2.0'],
-    "agpl-3.0-plus": ["no license", 'mit', 'cc-by-sa-4.0', 'cc-by-nc-sa-4.0', 'cc-by-nc-sa-3.0', 'no license', 'odc-by-1.0', 'apache-2.0'],
-    "cc-by-nc-sa-4.0": ["no license", 'mit', 'apache-2.0', 'cc-by-4.0', 'cc-by-sa-3.0', 'gpl-3.0', 'bsd-3-clause', 'cc0-1.0', 'proprietary-license', 'cecill-c', 'json', 'cc-by-nc-nd-4.0', 'cc-by-sa-4.0'],
-    "cc-by-nc-4.0": ['mit', 'apache-2.0'],
-    "no license": [],
-    "bsd-3-clause": [],
-    'mpl-2.0': ["mit"],
-    'mit-0': [],
-    'lgpl-3.0': ['no license'],
-    'lgpl-3.0-plus': ['no license'],
-    'lgpl-2.1': [],
-    'cc0-1.0': [],
-    'cc-by-sa-4.0': ['cc-by-sa-3.0','apache-2.0', 'no license', 'mit', 'agpl-3.0', 'bsd-2-clause', 'cc-by-nc-4.0', 'proprietary-license', 'cc-by-nc-sa-4.0', 'cc0-1.0', 'mpl-2.0'],
-    'bsd-2-clause': [],
-    'epl-2.0': [],
-    'bigscience-openrail-m':['mit'],
-    'openrail': ['apache-2.0', 'cc0-1.0', 'gpl-3.0', 'gpl-1.0-plus', 'mit', 'bsd-3-clause', 'lgpl-2.1', 'agpl-3.0', 'cecill-c'],
-    'creativeml-openrail-m':['cc0-1.0', 'no license', 'apache-2.0', 'mit', 'apache-2.0 WITH llvm-exception', 'agpl-3.0', 'gpl-3.0', 'bsd-3-clause', 'bsd-2-clause', 'agpl-3.0-plus', 'mit-0', 'gpl-1.0-plus'],
-}
-
-
+def get_relationship(original, derivative):
+    if(original not in known_HF_licenses or derivative not in known_GH_licenses):
+        return -1
+    if(original is derivative):
+        return 1
+    
+    val = relationalTable.at(derivative, original)
+    
+    return val_dict[val]
 
 # Create a function to extract the repository name from a GitHub URL so all_gh_licenses.json can be queried with {username}/{repo}
 def extract_repo_name(url):
@@ -128,12 +82,38 @@ def extract_repo_name(url):
     else:
         return None
 
-unkownrelations = 0
-allLicenses = []
-sourceIDXs = []
-targetIDXs = []
-sankeySourceIdxs = {}
-sankeyTargetIdxs = {}
+
+others = ["other", 'unknown', 'unknown-license-reference', 'warranty-disclaimer', 'generic-cla', 'commercial-license', 'other-permissive', 'other-copyleft']
+def process_license(license):
+    if type(license) is type(None) or license == "unlicense":
+        return "no license"
+    if license in others:
+        return "other"
+    if license in aliases.keys():
+        return aliases[license]
+
+SankeyRelations = {}
+""" Sankey Relations
+{
+    hf_license1: {
+        gh_license1: {
+            count: number
+            color: rgba
+        },
+        ...
+    },
+    ...
+}
+"""
+opacity = 0.25
+red =  f"rgba(255,0,0,{opacity})"
+blue = f"rgba(0,0,255,{opacity})"
+grey = f"rgba(110,110,110,{opacity})"
+unanalyzedHF = set()
+unanalyzedGH = set()
+totalRelationsCNT = 0
+identicalRelations = 0
+skippedNum = 0
 for cnt, row in df.iterrows():
     # display count
     counter_str = f"\rProcessed {cnt}/{df.shape[0]-1} relations"
@@ -141,114 +121,117 @@ for cnt, row in df.iterrows():
     sys.stdout.flush()
     
     # get HF and GH licenses
-    if(not pd.notna(row[hf_license_col])):
+    if(not pd.notna(row[hf_license_column])):
         hf_license = "no license"
     else:
-        hf_license = row[hf_license_col].lower()
+        hf_license = row[hf_license_column].lower()
     gh_repo_name = extract_repo_name(row[gh_repo_url_col])
     gh_licenses = GH_license_dict[gh_repo_name]
-    
-    # process current GH and HF Licenses 
-    # to filter out 'other', process 'no license', 
-    # and process found aliases
     if type(gh_licenses) is type(None):
         gh_licenses = ["no license"]
-    if gh_licenses is None or not gh_licenses:
-        for l in gh_licenses:
-            if pd.notna(l):
-                gh_licenses = l
-    if not pd.notna(hf_license) or hf_license == "unlicense":
-        hf_license = "no license"
-        
-    if hf_license=="other" or hf_license=='unknown' or hf_license=='unknown-license-reference' or hf_license=='warranty-disclaimer' or hf_license=='generic-cla' or hf_license=='commercial-license' or hf_license=='other-permissive' or hf_license=='other-copyleft':
-        hf_license = "other"
-    if hf_license in aliases.keys():
-        hf_license = aliases[hf_license]
+    if(len(gh_licenses) > 1): # only analyzing “one GH repo one license”
+        skippedNum += 1
+        continue
+    hf_license = process_license(hf_license)
     
-    # check if HF license is known
-    if(hf_license not in allHFlicenses):
-        unkownrelations += 1
-        if(hf_license not in unkownMappings.keys()):
-            unkownMappings[hf_license] = set()
-        (unkownMappings[hf_license].add(l) for l in gh_licenses)
+    # check if HF license is filtered to other by the set other count
+    # to reduce the clutter in the Sankey
+    hf_license_alt = hf_license
     if(hf_license in hf_other):
-        hf_license = "other"
+        hf_license_alt = "other"
     
     # process data for Sankey Diagram
     # first need to see if the current HF license has been added as a source yet
-    if(hf_license not in sankeySourceIdxs.keys()):
-        sankeySourceIdxs[hf_license] = len(allLicenses)
-        allLicenses.append(hf_license)
-    sourceIDX = sankeySourceIdxs[hf_license]
-    for l in gh_licenses:
-        # process current GH license to filter out 'other,
-        # process 'no license', and process found aliases
-        if(l=="unlicense"):
-            l = "no license"
-        if(l=="other" or l=='unknown' or l=='unknown-license-reference' or l=='warranty-disclaimer' or l=='generic-cla' or l=='commercial-license' or l=='other-permissive' or l=='other-copyleft'):
-            l = "other"
-        if(l in aliases.keys()):
-            l = aliases[l]
-        if(l != "other" and hf_license != "other" and l not in knownMapping[hf_license]):
-            unkownrelations += 1
-            if(hf_license not in unkownMappings.keys()):
-                unkownMappings[hf_license] = dict()
-                unkownMappings[hf_license][l] = 1
-            elif(l not in unkownMappings[hf_license].keys()):
-                unkownMappings[hf_license][l] = 1
-            else:
-                unkownMappings[hf_license][l] += 1
-        if(l in gh_other):
-            l = "other"
-        # Now need to see if the current GH license has been added as a sink yet
-        if(l not in sankeyTargetIdxs.keys()):
-            sankeyTargetIdxs[l] = len(allLicenses)
-            allLicenses.append(l)
-        sinkIDX = sankeyTargetIdxs[l]
-        
-        sourceIDXs.append(sourceIDX)
-        targetIDXs.append(sinkIDX)
-        
-        # same as trained PTM only filter
-        # incompatible_licenses = incompatibleMapping[hf_license]
-        # i=0
-        # try:
-        #     while l not in licenseTypeMapping[licenseTypes[i]]:
-        #         i+=1
-        #     totalFrequencies[i] += 1
-        #     if l in incompatible_licenses:
-        #         incompatibilityFrequencies[i] += 1
-        # except IndexError:
-        #     print("\nINDEX ERROR")
-        #     print("Index: ", i)
-        #     print("IndexError: ", l)
-        #     exit()
+    if(hf_license_alt not in SankeyRelations.keys()):
+        SankeyRelations[hf_license_alt] = dict()
     
-
-
-# display incompatibility frequencies
+    for gh_license in gh_licenses:
+        gh_license = process_license(gh_license)
+        if(gh_license == hf_license):
+            identicalRelations += 1
+        color = blue
+        
+        # do not know relation of "other"
+        if(hf_license == "other" or gh_license == "other"):
+            color = grey
+            
+        # see if the relation is known by the Linux Foundation Table
+        if(gh_license not in known_GH_licenses): 
+            color = grey
+            unanalyzedGH.add(gh_license)
+        if(hf_license not in known_HF_licenses): 
+            color = grey
+            unanalyzedHF.add(hf_license)
+            
+        relationship = get_relationship(hf_license, gh_license)
+        totalRelationsCNT += 1
+        if(relationship == 0):
+            color = red
+        elif(relationship == -1):
+            color = grey
+        
+        # check if HF license is filtered to other by the set other count
+        # to reduce the clutter in the Sankey
+        gh_license_alt = gh_license
+        if(gh_license in gh_other):
+            gh_license_alt = "other"
+            
+        # if(color == grey or gh_license_alt=="no license" or hf_license=="no license"):
+        #     continue
+        # Now need to see if the current GH license has been added as a sink yet
+        if(gh_license_alt not in SankeyRelations[hf_license_alt].keys()):
+            SankeyRelations[hf_license_alt][gh_license_alt] = {"count":0, "color":color}
+                
+        SankeyRelations[hf_license_alt][gh_license_alt]["count"] += 1
+        
 print()
-print("unkown relations count:", unkownrelations)
-print("unkown relations percent:", 100*unkownrelations/(df.shape[0]-1))
-print("unkown mappings HF->GH: ", unkownMappings)
+print("unanalyzedHF: ", unanalyzedHF)
+print()
+print("unanalyzedGH: ", unanalyzedGH)
+print()
+print("totalRelationsCNT: ", totalRelationsCNT)
+print("identicalRelations: ", identicalRelations)
+print(100*identicalRelations/totalRelationsCNT, "%")
+print("skipped: ", skippedNum)
+# process SankeyRelations to display the Sankey Diagram
+allLicenses = [] 
+sourceIDXs = []
+targetIDXs = []
+colors = []
+counts = []
+
+for hf_l in SankeyRelations.keys():
+    source_i = len(allLicenses)
+    allLicenses.append(hf_l)
+    for gh_l in SankeyRelations[hf_l].keys():
+        target_i = len(allLicenses)
+        allLicenses.append(gh_l)
+        sourceIDXs.append(source_i)
+        targetIDXs.append(target_i)
+        colors.append(SankeyRelations[hf_l][gh_l]["color"])
+        counts.append(SankeyRelations[hf_l][gh_l]["count"])
+        
 
 # Set up the Sankey diagram
 fig = go.Figure(data=[go.Sankey(
+    arrangement="snap",
     node=dict(
-        pad=15,
-        thickness=20,
-        line=dict(color='black', width=0.5),
-        label=allLicenses
+        pad=70,
+        thickness=25,
+        line=dict(color='black', width=0.6),
+        label=allLicenses,
+        # x=x_pos
     ),
     link=dict(
         source=sourceIDXs,
         target=targetIDXs,
-        value=([1]*len(sourceIDXs)),
+        color=colors,
+        value=counts,
     )
 )])
 
 # Customize layout
-fig.update_layout(title_text="Basic Sankey Diagram", font_size=10)
-
+fig.update_layout(title_text="HF to GH License Compatibilities", font_size=30)
+fig.update_yaxes(ticklabelposition = "outside")
 # Show the figure
 fig.show()
