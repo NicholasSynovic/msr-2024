@@ -13,7 +13,7 @@ see example.csv for the minimal format of an inputted .csv
 The CSV file should have at least two columns: one for the GitHub repository's URL and another for the corresponding license of the utilized PTM from Hugging Face.
 In the case of example.csv, gh_repo_url_col=0 and hf_license_col=1.
 
-see exampleJSON.md for the format of an inputted .json
+see example.json for the format of an inputted .json
 
 The JSON file should contain a mapping of GitHub repositories to their corresponding licenses as key-list pairs. The key should be the GitHub "{username}/{repo}" found in the URL of a GitHub repository. The paired list to the key is any applicable licenses to the GitHub repository. Licenses in this project are stored by their SPDX Identifier.
 
