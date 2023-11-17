@@ -5,7 +5,7 @@ import re
 import json
 import sys
 
-otherNum = 100
+otherNum = 500
 
 # file paths for hf license -> gh license relations
 hf_license_to_gh_repo_csv = "mapping.csv"
