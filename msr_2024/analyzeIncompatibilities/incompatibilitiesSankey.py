@@ -146,17 +146,17 @@ for cnt, row in df.iterrows():
     else:
         hf_license = row[hf_license_col].lower()
     gh_repo_name = extract_repo_name(row[gh_repo_url_col])
-    gh_license = GH_license_dict[gh_repo_name]
+    gh_licenses = GH_license_dict[gh_repo_name]
     
     # process current GH and HF Licenses 
     # to filter out 'other', process 'no license', 
     # and process found aliases
-    if type(gh_license) is type(None):
-        gh_license = ["no license"]
-    if gh_license is None or not gh_license:
-        for l in gh_license:
+    if type(gh_licenses) is type(None):
+        gh_licenses = ["no license"]
+    if gh_licenses is None or not gh_licenses:
+        for l in gh_licenses:
             if pd.notna(l):
-                gh_license = l
+                gh_licenses = l
     if not pd.notna(hf_license) or hf_license == "unlicense":
         hf_license = "no license"
         
@@ -170,7 +170,7 @@ for cnt, row in df.iterrows():
         unkownrelations += 1
         if(hf_license not in unkownMappings.keys()):
             unkownMappings[hf_license] = set()
-        (unkownMappings[hf_license].add(l) for l in gh_license)
+        (unkownMappings[hf_license].add(l) for l in gh_licenses)
     if(hf_license in hf_other):
         hf_license = "other"
     
@@ -180,7 +180,7 @@ for cnt, row in df.iterrows():
         sankeySourceIdxs[hf_license] = len(allLicenses)
         allLicenses.append(hf_license)
     sourceIDX = sankeySourceIdxs[hf_license]
-    for l in gh_license:
+    for l in gh_licenses:
         # process current GH license to filter out 'other,
         # process 'no license', and process found aliases
         if(l=="unlicense"):
