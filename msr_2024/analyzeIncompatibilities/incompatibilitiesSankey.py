@@ -13,6 +13,7 @@ gh_other = df.values.tolist()[0]
 # file paths for hf license -> gh license relations
 hf_license_to_gh_repo_csv = "mapping.csv"
 gh_repo_url_column = 0
+hf_repo_url_column = 2
 hf_license_column = 3
 
 gh_repo_to_gh_license_json = "all_gh_licenses.json"
@@ -112,12 +113,16 @@ SankeyRelations = {}
     ...
 }
 """
-opacity = 0.6
+opacity = 0.3
 red =  f"rgba(255,0,0,{1})"
 blue = f"rgba(0,0,255,{opacity})"
 grey = f"rgba(110,110,110,{opacity})"
-unanalyzedHF = set()
-unanalyzedGH = set()
+allHFPTMS = set()
+allGHRepos = set()
+analyzedHFPTMS = set()
+analyzedGHRepos = set()
+unanalyzedHFlicenses = set()
+unanalyzedGHlicenses = set()
 totalRelationsCNT = 0
 identicalRelations = 0
 skippedNum = 0
@@ -129,6 +134,10 @@ for cnt, row in df.iterrows():
     counter_str = f"\rProcessed {cnt}/{df.shape[0]-1} relations"
     sys.stdout.write(counter_str)
     sys.stdout.flush()
+    
+    # track the PTMs and Repos which are looked at
+    allHFPTMS.add(row[hf_repo_url_column])
+    allGHRepos.add(row[gh_repo_url_column])
     
     # get HF and GH licenses
     if(not pd.notna(row[hf_license_column])):
@@ -147,7 +156,7 @@ for cnt, row in df.iterrows():
     # check if HF license is filtered to other by the set other count
     # to reduce the clutter in the Sankey
     hf_license_alt = hf_license
-    if(hf_license in hf_other):
+    if(hf_license in hf_other or hf_license not in known_HF_licenses):
         hf_license_alt = "other"
     
     # process data for Sankey Diagram
@@ -155,6 +164,8 @@ for cnt, row in df.iterrows():
     if(hf_license_alt not in SankeyRelations.keys()):
         SankeyRelations[hf_license_alt] = dict()
     
+    # only ever 1 license in this context here to
+    # allow an easy switch to analyze multi license repose
     for gh_license in gh_licenses:
         gh_license = process_license(gh_license)
         if(gh_license == hf_license):
@@ -168,10 +179,10 @@ for cnt, row in df.iterrows():
         # see if the relation is known by the Linux Foundation Table
         if(gh_license not in known_GH_licenses): 
             color = grey
-            unanalyzedGH.add(gh_license)
+            unanalyzedGHlicenses.add(gh_license)
         if(hf_license not in known_HF_licenses): 
             color = grey
-            unanalyzedHF.add(hf_license)
+            unanalyzedHFlicenses.add(hf_license)
             
         relationship = get_relationship(hf_license, gh_license)
         totalRelationsCNT += 1
@@ -188,7 +199,7 @@ for cnt, row in df.iterrows():
         # check if HF license is filtered to other by the set other count
         # to reduce the clutter in the Sankey
         gh_license_alt = gh_license
-        if(gh_license in gh_other):
+        if(gh_license in gh_other or gh_license not in known_GH_licenses):
             gh_license_alt = "other"
             
         # if(color == grey or gh_license_alt=="no license" or hf_license=="no license"):
@@ -199,22 +210,26 @@ for cnt, row in df.iterrows():
                 
         ((SankeyRelations[hf_license_alt])[gh_license_alt])["count"] += 1
         
+        # track the PTMs and Repos which are analyzed
+        analyzedHFPTMS.add(row[hf_repo_url_column])
+        analyzedGHRepos.add(row[gh_repo_url_column])
+        
 # wall of text
 print()
 print()
-print("unanalyzedHF: ", unanalyzedHF, '\n')
+print("unanalyzedHFlicenses: ", unanalyzedHFlicenses, '\n')
 print()
-print("unanalyzedGH: ", unanalyzedGH, '\n')
+print("unanalyzedGHlicenses: ", unanalyzedGHlicenses, '\n')
 print()
-print(f"percent HF Licenses Analyzed: {100*len(known_HF_licenses) / (len(known_HF_licenses)+len(unanalyzedHF)):.2f}%")
-print(f"percent GF Licenses Analyzed: {100*len(known_GH_licenses) / (len(known_GH_licenses)+len(unanalyzedGH)):.2f}%")
+print(f"Percent HF Licenses Analyzed: {100*len(known_HF_licenses) / (len(known_HF_licenses)+len(unanalyzedHFlicenses)):.2f}%")
+print(f"Percent GF Licenses Analyzed: {100*len(known_GH_licenses) / (len(known_GH_licenses)+len(unanalyzedGHlicenses)):.2f}%")
 print()
-print(f"percent HF Repos Analyzed: {100*1:.2f}%")
-print(f"percent GF Repos Analyzed: {100*1:.2f}%")
+print(f"percent HF Repos Analyzed: {100*len(analyzedHFPTMS)/len(allHFPTMS):.2f}%")
+print(f"percent GF Repos Analyzed: {100*len(analyzedGHRepos)/len(allGHRepos):.2f}%")
 print()
 print(f"skipped relations: {skippedNum}")
 print(f"Total Number of Covered Relations: {totalRelationsCNT}")
-print(f"identicalRelations: {identicalRelations} -- > ", end='')
+print(f"identical relations: {identicalRelations} -- > ", end='')
 print(f"{100*identicalRelations/totalRelationsCNT:.2f}%")
 print(f"compatible relations: {numCompatible} --> ", end='')
 print(f"{100*numCompatible/totalRelationsCNT:.2f}%")
@@ -228,6 +243,7 @@ print(f"{100*numUnkown/totalRelationsCNT:.2f}%")
 allLicenses = [] 
 sourceLicenses = {}
 targetLicenses = {}
+x_positions = []
 sourceIDXs = []
 targetIDXs = []
 colors = []
@@ -254,13 +270,12 @@ for hf_l in SankeyRelations.keys():
 
 # Set up the Sankey diagram
 fig = go.Figure(data=[go.Sankey(
-    arrangement="snap",
+    arrangement="freeform",
     node=dict(
-        pad=70,
-        thickness=25,
+        pad=30,
+        thickness=20,
         line=dict(color='black', width=0.6),
         label=allLicenses,
-        # x=x_pos
     ),
     link=dict(
         source=sourceIDXs,
@@ -271,7 +286,7 @@ fig = go.Figure(data=[go.Sankey(
 )])
 
 # Customize layout
-fig.update_layout(title_text="HF to GH License Compatibilities", font_size=40)
+fig.update_layout(title_text="", font_size=35)
 fig.update_yaxes(ticklabelposition = "outside")
 # Show the figure
 fig.show()
