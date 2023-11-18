@@ -12,7 +12,7 @@ gh_other = df.values.tolist()[0]
 
 # file paths for hf license -> gh license relations
 hf_license_to_gh_repo_csv = "mapping.csv"
-gh_repo_url_col = 0
+gh_repo_url_column = 0
 hf_license_column = 3
 
 gh_repo_to_gh_license_json = "all_gh_licenses.json"
@@ -91,6 +91,7 @@ def process_license(license):
         return "other"
     if license in aliases.keys():
         return aliases[license]
+    return license
 
 SankeyRelations = {}
 """ Sankey Relations
@@ -125,7 +126,7 @@ for cnt, row in df.iterrows():
         hf_license = "no license"
     else:
         hf_license = row[hf_license_column].lower()
-    gh_repo_name = extract_repo_name(row[gh_repo_url_col])
+    gh_repo_name = extract_repo_name(row[gh_repo_url_column])
     gh_licenses = GH_license_dict[gh_repo_name]
     if type(gh_licenses) is type(None):
         gh_licenses = ["no license"]
@@ -179,10 +180,10 @@ for cnt, row in df.iterrows():
         # if(color == grey or gh_license_alt=="no license" or hf_license=="no license"):
         #     continue
         # Now need to see if the current GH license has been added as a sink yet
-        if(gh_license_alt not in SankeyRelations[hf_license_alt].keys()):
-            SankeyRelations[hf_license_alt][gh_license_alt] = {"count":0, "color":color}
+        if(gh_license_alt not in (SankeyRelations[hf_license_alt]).keys()):
+            (SankeyRelations[hf_license_alt])[gh_license_alt] = {"count":0, "color":color}
                 
-        SankeyRelations[hf_license_alt][gh_license_alt]["count"] += 1
+        ((SankeyRelations[hf_license_alt])[gh_license_alt])["count"] += 1
         
 print()
 print("unanalyzedHF: ", unanalyzedHF)
@@ -193,23 +194,23 @@ print("totalRelationsCNT: ", totalRelationsCNT)
 print("identicalRelations: ", identicalRelations)
 print(100*identicalRelations/totalRelationsCNT, "%")
 print("skipped: ", skippedNum)
+
 # process SankeyRelations to display the Sankey Diagram
 allLicenses = [] 
 sourceIDXs = []
 targetIDXs = []
 colors = []
 counts = []
-
 for hf_l in SankeyRelations.keys():
     source_i = len(allLicenses)
     allLicenses.append(hf_l)
-    for gh_l in SankeyRelations[hf_l].keys():
+    for gh_l in (SankeyRelations[hf_l]).keys():
         target_i = len(allLicenses)
         allLicenses.append(gh_l)
         sourceIDXs.append(source_i)
         targetIDXs.append(target_i)
-        colors.append(SankeyRelations[hf_l][gh_l]["color"])
-        counts.append(SankeyRelations[hf_l][gh_l]["count"])
+        colors.append((SankeyRelations[hf_l])[gh_l]["color"])
+        counts.append((SankeyRelations[hf_l])[gh_l]["count"])
         
 
 # Set up the Sankey diagram
