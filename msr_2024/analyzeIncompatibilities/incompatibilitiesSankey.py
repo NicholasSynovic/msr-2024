@@ -65,7 +65,7 @@ def get_relationship(original, derivative):
     if(original is derivative):
         return 1
     
-    val = relationalTable.at(derivative, original)
+    val = relationalTable.loc[derivative, original]
     
     return val_dict[val]
 
