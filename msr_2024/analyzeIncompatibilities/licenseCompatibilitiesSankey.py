@@ -199,7 +199,7 @@ for cnt, row in df.iterrows():
         # check if HF license is filtered to other by the set other count
         # to reduce the clutter in the Sankey
         gh_license_alt = gh_license
-        if(gh_license in gh_other or gh_license not in known_GH_licenses):
+        if(gh_license in gh_other or (gh_license not in known_GH_licenses and gh_license != "no license")):
             gh_license_alt = "other"
             
         # if(color == grey or gh_license_alt=="no license" or hf_license=="no license"):
@@ -224,18 +224,18 @@ print()
 print(f"Percent HF Licenses Analyzed: {100*len(known_HF_licenses) / (len(known_HF_licenses)+len(unanalyzedHFlicenses)):.2f}%")
 print(f"Percent GF Licenses Analyzed: {100*len(known_GH_licenses) / (len(known_GH_licenses)+len(unanalyzedGHlicenses)):.2f}%")
 print()
-print(f"percent HF Repos Analyzed: {100*len(analyzedHFPTMS)/len(allHFPTMS):.2f}%")
-print(f"percent GF Repos Analyzed: {100*len(analyzedGHRepos)/len(allGHRepos):.2f}%")
+print(f"Percent HF Repos Analyzed: {100*len(analyzedHFPTMS)/len(allHFPTMS):.2f}%")
+print(f"Percent GF Repos Analyzed: {100*len(analyzedGHRepos)/len(allGHRepos):.2f}%")
 print()
-print(f"skipped relations: {skippedNum}")
+print(f"Skipped Relations: {skippedNum}")
 print(f"Total Number of Covered Relations: {totalRelationsCNT}")
-print(f"identical relations: {identicalRelations} -- > ", end='')
+print(f"Identical Relations: {identicalRelations} -- > ", end='')
 print(f"{100*identicalRelations/totalRelationsCNT:.2f}%")
-print(f"compatible relations: {numCompatible} --> ", end='')
+print(f"Compatible Relations: {numCompatible} --> ", end='')
 print(f"{100*numCompatible/totalRelationsCNT:.2f}%")
-print(f"incompatible relations: {numIncompatible} --> ", end='')
+print(f"Incompatible Relations: {numIncompatible} --> ", end='')
 print(f"{100*numIncompatible/totalRelationsCNT:.2f}%")
-print(f"unknown relations: {numUnkown} --> ", end='')
+print(f"Unknown Relations: {numUnkown} --> ", end='')
 print(f"{100*numUnkown/totalRelationsCNT:.2f}%")
 
 

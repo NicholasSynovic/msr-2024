@@ -8,8 +8,8 @@ otherNum = 250
 
 # file paths for hf license -> gh license relations
 hf_license_to_gh_repo_csv = "mapping.csv"
-gh_repo_url_col = 0
-hf_license_col = 3
+gh_repo_url_column = 0
+hf_license_column = 3
 
 gh_repo_to_gh_license_json = "all_gh_licenses.json"
 
@@ -58,11 +58,11 @@ for cnt, row in df.iterrows():
     sys.stdout.flush()
     
     # get HF and GH licenses
-    if(not pd.notna(row[hf_license_col])):
+    if(not pd.notna(row[hf_license_column])):
         hf_license = "no license"
     else:
-        hf_license = row[hf_license_col].lower()
-    gh_repo_name = extract_repo_name(row[gh_repo_url_col])
+        hf_license = row[hf_license_column].lower()
+    gh_repo_name = extract_repo_name(row[gh_repo_url_column])
     gh_license = GH_license_dict[gh_repo_name]
     
     # process current GH and HF Licenses 
