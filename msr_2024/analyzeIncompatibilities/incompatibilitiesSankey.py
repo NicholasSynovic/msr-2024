@@ -38,16 +38,22 @@ aliases = {
     "bsd-new": "bsd-3-clause",
     "bsd-modified": "bsd-3-clause",
     "bsd-simplified": "bsd-2-clause",
-    'openrail++':'openrail',    
+    'openrail++': 'openrail',    
+    'gpl-2.0': 'gpl-2.0-only',
+    'gpl-3.0': 'gpl-3.0-only',
+    'gpl-3.0-plus': 'gpl-3.0-or-later',
+    'agpl-3.0': 'agpl-3.0-only',
+    'lgpl-3.0': 'lgpl-3.0-only',
+    'lgpl-3.0-plus': 'lgpl-3.0-or-later',
+    'lgpl-2.1': 'lgpl-2.1-only',
+    
 }
 
 # process Linux Foundation Compatabilities Table
-relationalTable = pd.read_excel("Linux-Foundation-OSS-License-Compatibility.xlsx")
+relationalTable = pd.read_excel("Linux-Foundation-OSS-License-Compatibility.xlsx", index_col=0)
 
-known_HF_licenses = list(relationalTable.columns)[1:]
-known_HF_licenses = known_HF_licenses[0:len(known_HF_licenses)-1] # remove the 'Compatabilities' cell, since it is not a license
-
-known_GH_licenses = relationalTable.iloc[:, 0].tolist()
+known_HF_licenses = list(relationalTable.columns)
+known_GH_licenses = list(relationalTable.index)
 
 # function to get the compatibility of the licenses
 # returns int:
@@ -60,12 +66,12 @@ val_dict = {
     "no": 0
 }
 def get_relationship(original, derivative):
-    if(original not in known_HF_licenses or derivative not in known_GH_licenses):
+    if((original not in known_HF_licenses) or (derivative not in known_GH_licenses)):
         return -1
-    if(original is derivative):
+    if(original == derivative):
         return 1
     
-    val = relationalTable.loc[derivative, original]
+    val = relationalTable.loc[derivative, original] # 'RowLabel', 'ColumnLabel'
     
     return val_dict[val]
 
@@ -106,8 +112,8 @@ SankeyRelations = {}
     ...
 }
 """
-opacity = 0.25
-red =  f"rgba(255,0,0,{opacity})"
+opacity = 0.6
+red =  f"rgba(255,0,0,{1})"
 blue = f"rgba(0,0,255,{opacity})"
 grey = f"rgba(110,110,110,{opacity})"
 unanalyzedHF = set()
@@ -115,6 +121,9 @@ unanalyzedGH = set()
 totalRelationsCNT = 0
 identicalRelations = 0
 skippedNum = 0
+numCompatible = 0
+numIncompatible = 0
+numUnkown = 0
 for cnt, row in df.iterrows():
     # display count
     counter_str = f"\rProcessed {cnt}/{df.shape[0]-1} relations"
@@ -167,9 +176,14 @@ for cnt, row in df.iterrows():
         relationship = get_relationship(hf_license, gh_license)
         totalRelationsCNT += 1
         if(relationship == 0):
+            numIncompatible += 1
             color = red
         elif(relationship == -1):
+            numUnkown += 1
             color = grey
+        else:
+            numCompatible += 1
+            color = blue
         
         # check if HF license is filtered to other by the set other count
         # to reduce the clutter in the Sankey
@@ -185,28 +199,53 @@ for cnt, row in df.iterrows():
                 
         ((SankeyRelations[hf_license_alt])[gh_license_alt])["count"] += 1
         
+# wall of text
 print()
-print("unanalyzedHF: ", unanalyzedHF)
 print()
-print("unanalyzedGH: ", unanalyzedGH)
+print("unanalyzedHF: ", unanalyzedHF, '\n')
 print()
-print("totalRelationsCNT: ", totalRelationsCNT)
-print("identicalRelations: ", identicalRelations)
-print(100*identicalRelations/totalRelationsCNT, "%")
-print("skipped: ", skippedNum)
+print("unanalyzedGH: ", unanalyzedGH, '\n')
+print()
+print(f"percent HF Licenses Analyzed: {100*len(known_HF_licenses) / (len(known_HF_licenses)+len(unanalyzedHF)):.2f}%")
+print(f"percent GF Licenses Analyzed: {100*len(known_GH_licenses) / (len(known_GH_licenses)+len(unanalyzedGH)):.2f}%")
+print()
+print(f"percent HF Repos Analyzed: {100*1:.2f}%")
+print(f"percent GF Repos Analyzed: {100*1:.2f}%")
+print()
+print(f"skipped relations: {skippedNum}")
+print(f"Total Number of Covered Relations: {totalRelationsCNT}")
+print(f"identicalRelations: {identicalRelations} -- > ", end='')
+print(f"{100*identicalRelations/totalRelationsCNT:.2f}%")
+print(f"compatible relations: {numCompatible} --> ", end='')
+print(f"{100*numCompatible/totalRelationsCNT:.2f}%")
+print(f"incompatible relations: {numIncompatible} --> ", end='')
+print(f"{100*numIncompatible/totalRelationsCNT:.2f}%")
+print(f"unknown relations: {numUnkown} --> ", end='')
+print(f"{100*numUnkown/totalRelationsCNT:.2f}%")
+
 
 # process SankeyRelations to display the Sankey Diagram
 allLicenses = [] 
+sourceLicenses = {}
+targetLicenses = {}
 sourceIDXs = []
 targetIDXs = []
 colors = []
 counts = []
 for hf_l in SankeyRelations.keys():
-    source_i = len(allLicenses)
-    allLicenses.append(hf_l)
+    if hf_l not in sourceLicenses.keys():
+        source_i = len(allLicenses)
+        allLicenses.append(hf_l)
+        sourceLicenses[hf_l] = source_i
+    else:
+        source_i = sourceLicenses[hf_l]
     for gh_l in (SankeyRelations[hf_l]).keys():
-        target_i = len(allLicenses)
-        allLicenses.append(gh_l)
+        if gh_l not in targetLicenses.keys():
+            target_i = len(allLicenses)
+            allLicenses.append(gh_l)
+            targetLicenses[gh_l] = target_i
+        else:
+            target_i = targetLicenses[gh_l]
         sourceIDXs.append(source_i)
         targetIDXs.append(target_i)
         colors.append((SankeyRelations[hf_l])[gh_l]["color"])
@@ -232,7 +271,7 @@ fig = go.Figure(data=[go.Sankey(
 )])
 
 # Customize layout
-fig.update_layout(title_text="HF to GH License Compatibilities", font_size=30)
+fig.update_layout(title_text="HF to GH License Compatibilities", font_size=40)
 fig.update_yaxes(ticklabelposition = "outside")
 # Show the figure
 fig.show()
